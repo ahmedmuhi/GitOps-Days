@@ -26,8 +26,8 @@ This is the actual environment where your application actually runs. Kubernetes,
 
 This includes:
 
-* Continuous Integration (CI): This is about taking code changes, testing them, and then creating a container image.
-* Continuous Deployment/Delivery (CD): Here, traditionally, we're talking about deploying the containers. But in GitOps, this part usually just updates Kubernetes manifests or Helm charts with new container image information. After that, the GitOps Operator takes over and does the deployment.
+* **Continuous Integration (CI)**: This is about taking code changes, testing them, and then creating a container image.
+* **Continuous Deployment/Delivery (CD)**: Here, traditionally, we're talking about deploying the containers. But in GitOps, this part usually just updates Kubernetes manifests or Helm charts with new container image information. After that, the GitOps Operator takes over and does the deployment.
 
 ## GitOps in Action: Walking Through an Example
 
