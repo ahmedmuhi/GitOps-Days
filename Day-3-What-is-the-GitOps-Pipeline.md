@@ -6,28 +6,27 @@ GitOps pipeline is a series of automated processes that take your application fr
 
 A Typical GitOps Pipeline consist of the following components:
 
-1. Git Repository:
+1. **Git Repository**:
 
 At the heart of any GitOps pipeline is the Git repository. All your application code, configuration, and infrastructure-as-code definitions (like Kubernetes manifests or Helm charts) reside here. Every change in the repo can potentially trigger a GitOps-driven action.
 
-2. GitOps Operator (e.g., Flux CD, Argo CD):
+2. **GitOps Operator (e.g., Flux CD, Argo CD)**:
 
 A key part of the GitOps pipeline is the GitOps operator software, such as Flux CD or Argo CD. This tool keeps an eye the Git repository. If something changes in the repo, like you update a setting or the application code, this operator springs into action to update the live environment accordingly.
 
-3. Container Registry:
+3. **Container Registry**:
 
 Think of this as a storage space for all your container images. Once you've made changes and built a new version of your application as a container, it gets stored here. Later on, when deploying or updating the app, the GitOps Operator will pull the right container image from here based on the definitions in the Git repo.
 
-4. Container Orchestration System (e.g., Kubernetes):
+4. **Container Orchestration System (e.g., Kubernetes)**:
 
 This is the actual environment where your application actually runs. Kubernetes, takes the rules and settings you've defined (in Kubernetes manifests or Helm charts) and makes sure your application runs that way.
 
-5. CI/CD Pipeline:
+5. **CI/CD Pipeline**:
 
 This includes:
-
-Continuous Integration (CI): This is about taking code changes, testing them, and then creating a container image.
-Continuous Deployment/Delivery (CD): Here, traditionally, we're talking about deploying the containers. But in GitOps, this part usually just updates Kubernetes manifests or Helm charts with new container image information. After that, the GitOps Operator takes over and does the deployment.
+    * **Continuous Integration (CI)**: This is about taking code changes, testing them, and then creating a container image.
+    * **Continuous Deployment/Delivery (CD)**: Here, traditionally, we're talking about deploying the containers. But in GitOps, this part usually just updates Kubernetes manifests or Helm charts with new container image information. After that, the GitOps Operator takes over and does the deployment.
 
 ## GitOps in Action: Walking Through an Example
 
@@ -59,3 +58,7 @@ Let's say you update your application's code. Here's the sequence of events:
 Even though the change originated from a code update and not a direct change to the environment, the updated image tag in the manifest or Helm chart is considered a change to the desired state of your application's environment.
 
 The beauty of this approach is that to deploy or modify your application, all you need to do is change your Git repository. GitOps Operators will ensure that whatever is in the repository gets reflected in your Kubernetes environment. No need for manual commands or scripts; just update your repository, and the rest is handled automatically!
+
+### Image Source
+
+[GitOps - The Path to A Fully-Automated CI/CD Pipelines](https://www.weave.works/blog/gitops-fully-automated-ci-cd-pipelines)
