@@ -4,3 +4,5 @@ This repository is a guide to learn GitOps fundamentals, on a day-by-day basis. 
 **- [Day-1: What really is GitOps?](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)**
 
 **- [Day-2: GitOps Four Principles](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-GitOps-Four-Principles.md)**
+
+**- [Day-3: What is the GitOps Pipeline](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-3-What-is-the-GitOps-Pipeline.md)**
