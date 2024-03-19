@@ -37,7 +37,7 @@ By embracing the GitOps pipeline, you embark on a journey of consistent, reliabl
 
 Congratulations, GitOps adventurers! You've now unveiled the secrets of the GitOps pipeline and discovered how it can revolutionize your application deployment process. By leveraging Git as the single source of truth and automating the deployment journey, GitOps empowers you to achieve faster, more efficient, and less error-prone deployments.
 
-In the next article, we'll dive deeper into the realms of GitOps, exploring best practices and real-world use cases to help you master the art of GitOps.
+In the next article, we'll dive deeper into the world of GitOps tools, exploring two of the most popular GitOps tools Flux CD and Argo CD.
 
 Until then, keep exploring, keep learning, and may the GitOps force be with you! 🚀✨
 
