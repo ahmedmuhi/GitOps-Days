@@ -117,7 +117,7 @@ At a glance, the steps might feel similar. But the shift in **who’s in control
 
 Here’s how the GitOps loop actually fits into this picture:
 
-![GitOps Loop Diagram](Assets/GitOps-Loop.png)
+![GitOps Loop Diagram](assets/images/GitOps-Loop.png)
 
 Notice a few key things:
 - The **app code** and the **Kubernetes config** often live in *separate Git repos*
