@@ -1,149 +1,161 @@
-## 🚀 Day 2: Your First GitOps Loop — Running Flux CD on Your Laptop
+## 🚀 Day 2 – Your First GitOps Loop: Running Flux on Your Laptop
 
-Welcome back.
+Welcome back to GitOps-Days.
 
-[Yesterday](Day-1-What-really-is-GitOps.md), we unpacked the *what* and *why* of GitOps.  
-You saw how it's not just "YAML in Git"—but a model built on four principles: declarative state, version control, pull-based delivery, and continuous reconciliation.
+[Yesterday](Day-1-What-really-is-GitOps.md), you unpacked what GitOps really is—and why it's more than just storing YAML in Git.
+You saw how it’s a model built on four practical principles: declarative state, version control, pull-based deployment, and continuous reconciliation.
 
-You’ve now understood the model.  
-Today, you'll experience it—in action.
+You now understand the model.
+Today, you’ll experience it in action.
 
-We’re going to break Kubernetes—twice—and watch GitOps put it back together. Automatically.
+In under an hour, you’ll:
 
-In less than an hour, you'll have Flux CD running inside a local Kubernetes cluster (powered by Kind), syncing from your own GitHub repository, and watching for signs of drift.
+* Install **Flux** in a local Kubernetes cluster using **kind**
+* Connect Flux to your own GitHub fork
+* Watch the GitOps loop come alive—visually and automatically
+* Trigger recovery after intentional drift
+* Deploy through commits instead of `kubectl`, making every change feel structured and traceable
 
-You'll:
-- See the GitOps loop come alive—visually and automatically  
-- Trigger real-time recovery after intentional failure  
-- Operate through Git instead of your terminal—with clarity and control
+This isn’t about installing tools.
+It’s about feeling the shift—from commands to commits, and from manual recovery to automatic trust.
 
-This isn't just about installing tools.  
-It’s about *feeling the shift* GitOps introduces: from commands to commits, from manual recovery to automatic trust.
-
-Today is your GitOps crash test: manual failure, automatic repair, and a moment of  
-> _"Ohhh… now I get it."_
+You’ll introduce drift; Flux will correct it automatically.
 
 Let’s start the loop.
 
 ## 🧰 Get Ready to Run GitOps
 
-Before we launch our cluster or start syncing from Git, let’s make sure your system is ready to go.
+Before we launch our cluster or start syncing from Git, let’s make sure your workstation has the usual Kubernetes tooling.
 
-You’ll need a few tools installed—nothing unusual, just the standard gear for working with Kubernetes locally.
+| Tool         | Minimum version | Purpose                                           |
+| ------------ | --------------- | ------------------------------------------------- |
+| **Docker**   | 24.x            | Provides the container runtime that **kind** uses |
+| **kind**     | ≥ 0.23          | Spins up a local Kubernetes cluster inside Docker |
+| **kubectl**  | ≥ 1.27          | Lets you interact with the cluster                |
+| **Git**      | any recent      | Connects your machine to your GitHub fork         |
+| **Flux CLI** | ≥ 2.3.0         | Installs and manages Flux (you’ll add it shortly) |
 
-Here’s what you’ll want to have:
+> 💡 Already have these installed? Skip ahead. Otherwise, use the links below.
 
-| Tool       | Purpose |
-|------------|---------|
-| **Docker** | Powers our local Kubernetes cluster (via Kind) |
-| **Kind**   | Creates a local Kubernetes cluster inside Docker |
-| **kubectl**| Lets you interact with the cluster |
-| **Git**    | Connects your machine to your GitHub repo |
-| **Flux CLI** | Used to install and manage Flux (we’ll install this later) |
+**Quick install links**
 
-> 💡 If you already have these tools installed, you’re good to go.
+* [Docker](https://docs.docker.com/get-docker/)
+* [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/)
+* [Git](https://git-scm.com/downloads)
+* **Flux CLI**:
 
-Otherwise, here are quick install links:
+  * macOS / Linux → `curl -s https://fluxcd.io/install.sh | sudo bash`
+  * Windows → `choco install fluxcd`
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-- [Git](https://git-scm.com/downloads)
+(Optional) verify your versions:
 
-No need to install Flux yet—we’ll walk through that together in a later step.
+```bash
+docker --version
+kind --version
+kubectl version --client --short
+flux --version   # only after installing Flux CLI
+```
+
+No need to install Flux *inside* the cluster yet—we’ll walk through that in a later step.
 
 ## 🗃️ Set Up Your GitOps Repository
 
-In GitOps, everything starts with Git.
+Everything in GitOps begins with **Git**.
 
-Your repository isn’t just where you store manifests—it’s where you declare the **truth** about your system. And that’s what your cluster will sync to, over and over again.
+Your repository is more than a place to park YAML—it declares the **desired state** of your system, and the GitOps controller you’ll install later will keep the cluster aligned to that state.
 
-In this lab, we’re going to use a pre-built repository that contains all the files you need for Day 2:  
-- A simple demo app  
-- The Kubernetes manifests to deploy it  
-- A production-style folder structure
+For this lab you’ll fork a pre-built repository that already contains:
 
-But here’s the key: you need your own copy of it.  
-You’ll be editing it, committing to it, and watching your cluster respond.
+* a minimal demo application
+* the Kubernetes manifests that deploy it
+* a folder layout that mirrors real-world GitOps repos
 
-### ✅ Fork the Repository
+Forking lets you commit changes and watch the automation respond.
 
-To set this up:
+### Stage A – Fork in the browser
 
-1. Visit  
-   👉 [https://github.com/ahmedmuhi/GitOps-Days](https://github.com/ahmedmuhi/GitOps-Days)  
-2. Click the **“Fork”** button (top right)
-3. Clone your fork:
+1. Open [https://github.com/ahmedmuhi/GitOps-Days](https://github.com/ahmedmuhi/GitOps-Days).
+2. In the top-right corner, click **Fork** (the button may read **Create fork**).
+3. Accept the defaults—especially the branch name **main**—and click **Create fork**.
+   You now have your own copy under *YOUR-USERNAME/GitOps-Days*.
+
+### Stage B – Clone your fork locally
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/GitOps-Days.git
+git clone https://github.com/YOUR-USERNAME/GitOps-Days.git   # clones the main branch
 cd GitOps-Days
 ```
 
-This copy is now your GitOps **source of truth**.  
-The cluster won’t care where it came from—only that it stays aligned.
+Cloning after the fork ensures you’re working against *your* repository, not the original.
 
-### 💡 What’s Inside?
+Your fork now holds the desired state that the cluster will follow.
 
-This repository includes everything you’ll need for today’s exercise:
+### What’s Inside
 
-- ✅ Kubernetes manifests for our demo app  
-- ✅ A structured layout that mirrors real-world GitOps setups  
-- ✅ The exact files Flux will watch in upcoming steps
+* **Manifests** – Deployment and Service YAML for the demo app
+* **Directory layout** – Matches patterns you’ll use when the project grows
 
-We’ll explore this structure shortly. For now, you’ve got your control plane in Git—next, we’ll create one in Kubernetes.
+We’ll explore the structure shortly; next you’ll create the Kubernetes control plane that keeps everything in sync.
 
 ## 🧱 Spin Up a Local Kubernetes Cluster
 
-Now that your GitOps repo is ready, it's time to build something for it to sync with.
+Before we can see GitOps in action, we need a Kubernetes cluster where changes can happen.
+Rather than using a cloud provider, you’ll create a small, disposable cluster **on your own machine**—perfect for learning, safe to experiment with, and easy to reset.
 
-We’re going to create a clean, lightweight Kubernetes cluster—right on your laptop—using [Kind](https://kind.sigs.k8s.io/).
+We'll use [**kind**](https://kind.sigs.k8s.io/) (*Kubernetes in Docker*) to do this.
+It runs Kubernetes entirely in Docker containers and takes just a few seconds to spin up.
 
-Kind stands for **Kubernetes IN Docker**. It’s fast, minimal, and perfect for local testing like this.
+### 1 · Create the cluster
 
-> 💡 This cluster will be completely self-contained:  
-> You can destroy it at any time with `kind delete cluster --name gitops-loop-demo`  
-> and recreate it instantly with the same config.
-
-### 🛠️ Create the Cluster
-
-Let’s spin up your cluster:
+Run the following command to create a cluster called `gitops-loop-demo`.
+We also pin the Kubernetes version to `v1.29.0` so your experience matches the guide.
 
 ```bash
-kind create cluster --name gitops-loop-demo
+kind create cluster \
+  --name gitops-loop-demo \
+  --image kindest/node:v1.29.0
 ```
 
-This command launches a single-node Kubernetes cluster inside Docker.
+> 💡 **Why specify the image?**
+> Pinning the Kubernetes version avoids version drift. Without this, some features or outputs may behave differently depending on when you run the tutorial.
 
-📦 No custom config needed.  
-🧪 No remote resources.  
-Just a fresh, disposable cluster that Flux will soon take over.
+Once the command completes, your cluster is running locally—no cloud login or config required.
 
-### ✅ Check That It’s Working
+### 2 · Check that the cluster is ready
 
-Once Kind finishes provisioning, run:
+To confirm everything worked, run:
 
 ```bash
 kubectl get nodes
 ```
 
-You should see something like:
+You should see a single node with a status of `Ready`:
 
 ```
-NAME                          STATUS   ROLES           AGE   VERSION
-gitops-loop-demo-control-plane   Ready    control-plane   1m    v1.27.x
+NAME                            STATUS   ROLES           AGE   VERSION
+gitops-loop-demo-control-plane  Ready    control-plane   1m    v1.29.x
 ```
 
-That’s it—you’ve got a Kubernetes cluster running locally.
+This tells you the node has joined the cluster and is ready to schedule pods.
 
-> 🧠 Note: This cluster has just **one node**, and it's both the control plane and the worker node.  
-> For production, you’d normally separate those—but for this demo, this is everything we need.
+You can also check which cluster your `kubectl` is currently talking to:
 
-### 🧭 What’s Next?
+```bash
+kubectl config current-context
+```
 
-Your GitOps repo is ready. Your Kubernetes cluster is online.
+Expected output:
 
-Now let’s explore what this cluster will run—and how it will learn what “correct” looks like.
+```
+kind-gitops-loop-demo
+```
+
+This confirms that your context is pointed to the new cluster.
+It’s especially helpful if you’ve used Kubernetes before and have multiple clusters in your config.
+
+Your local cluster is now up and running.
+Next, let’s look at the application that GitOps will deploy—and the folder structure that declares what “should” be running.
 
 ## 📦 Explore the App You’ll Deploy
 
