@@ -1,25 +1,22 @@
 ## 🚀 Day 2 – Your First GitOps Loop: Running Flux on Your Laptop
 
-Welcome back to GitOps-Days.
+**Welcome back to GitOps-Days.**
 
-[Yesterday](Day-1-What-really-is-GitOps.md), you unpacked what GitOps really is—and why it's more than just storing YAML in Git.
-You saw how it’s a model built on four practical principles: declarative state, version control, pull-based deployment, and continuous reconciliation.
+[Yesterday](Day-1-What-really-is-GitOps.md), we looked at why Kubernetes clusters can drift from what’s in Git—and how GitOps helps prevent that. You saw how using Git as the source of truth, and having the cluster pull from it continuously, creates a safer and more predictable system.
 
-You now understand the model.
-Today, you’ll experience it in action.
+Today, you’ll bring that idea to life. You’ll be using **Flux**, an open-source GitOps engine built specifically for Kubernetes. Flux runs inside your cluster and takes care of watching your Git repository, pulling the latest configuration, and applying it continuously. If something drifts—a pod is deleted, a config is changed manually—Flux brings it back to match Git.
 
 In under an hour, you’ll:
 
-* Install **Flux** in a local Kubernetes cluster using **kind**
-* Connect Flux to your own GitHub fork
-* Watch the GitOps loop come alive—visually and automatically
+* Set up a local Kubernetes cluster
+* Install Flux and link it to your GitHub repo
+* See changes applied automatically from Git
 * Trigger recovery after intentional drift
-* Deploy through commits instead of `kubectl`, making every change feel structured and traceable
+* Deploy by committing to Git instead of running `kubectl`
 
-This isn’t about installing tools.
-It’s about feeling the shift—from commands to commits, and from manual recovery to automatic trust.
+You’ll even make a manual change—to see Flux detect and fix the drift on its own.
 
-You’ll introduce drift; Flux will correct it automatically.
+By the end of today, you'll experience firsthand how committing changes to Git can streamline your workflow, turning manual interventions into automated consistency.
 
 Let’s start the loop.
 
@@ -34,6 +31,8 @@ Before we launch our cluster or start syncing from Git, let’s make sure your w
 | **kubectl**  | ≥ 1.27          | Lets you interact with the cluster                |
 | **Git**      | any recent      | Connects your machine to your GitHub fork         |
 | **Flux CLI** | ≥ 2.3.0         | Installs and manages Flux (you’ll add it shortly) |
+
+> 💡 If you're using Docker Desktop (macOS/Windows), version 4.29 or later includes Docker Engine 24+, which is what `kind` and other tools rely on.
 
 > 💡 Already have these installed? Skip ahead. Otherwise, use the links below.
 
@@ -57,7 +56,7 @@ kubectl version --client --short
 flux --version   # only after installing Flux CLI
 ```
 
-No need to install Flux *inside* the cluster yet—we’ll walk through that in a later step.
+> You don’t need to install Flux *inside* the cluster yet—we’ll do that in a later step.
 
 ## 🗃️ Set Up Your GitOps Repository
 
@@ -65,33 +64,34 @@ Everything in GitOps begins with **Git**.
 
 Your repository is more than a place to park YAML—it declares the **desired state** of your system, and the GitOps controller you’ll install later will keep the cluster aligned to that state.
 
-For this lab you’ll fork a pre-built repository that already contains:
+For this lab you’ll fork a **pre‑built** repository *(so you can focus on GitOps, not authoring YAML from scratch).* It already contains:
 
 * a minimal demo application
 * the Kubernetes manifests that deploy it
-* a folder layout that mirrors real-world GitOps repos
+* a folder layout that mirrors real‑world GitOps repos
 
 Forking lets you commit changes and watch the automation respond.
 
-### Stage A – Fork in the browser
+### Stage A – Fork in the browser
 
 1. Open [https://github.com/ahmedmuhi/GitOps-Days](https://github.com/ahmedmuhi/GitOps-Days).
-2. In the top-right corner, click **Fork** (the button may read **Create fork**).
-3. Accept the defaults—especially the branch name **main**—and click **Create fork**.
-   You now have your own copy under *YOUR-USERNAME/GitOps-Days*.
+2. In the top‑right corner, click **Fork** (the button may read **Create fork**).
+3. Accept the defaults—especially the branch name **main**—and click **Create fork**. You now have your own copy under *YOUR‑USERNAME/GitOps-Days*.
 
-### Stage B – Clone your fork locally
+### Stage B – Clone your fork locally
+
+Open your terminal—**PowerShell** on Windows, Terminal on macOS/Linux—and run:
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/GitOps-Days.git   # clones the main branch
 cd GitOps-Days
 ```
 
-Cloning after the fork ensures you’re working against *your* repository, not the original.
+> ⚠️ **Important:** Clone *after* you fork so you’re working against **your** repository, not the original.
 
 Your fork now holds the desired state that the cluster will follow.
 
-### What’s Inside
+### What’s inside
 
 * **Manifests** – Deployment and Service YAML for the demo app
 * **Directory layout** – Matches patterns you’ll use when the project grows
@@ -100,88 +100,70 @@ We’ll explore the structure shortly; next you’ll create the Kubernetes contr
 
 ## 🧱 Spin Up a Local Kubernetes Cluster
 
-Before we can see GitOps in action, we need a Kubernetes cluster where changes can happen.
-Rather than using a cloud provider, you’ll create a small, disposable cluster **on your own machine**—perfect for learning, safe to experiment with, and easy to reset.
+Before we can see GitOps in action, we need a Kubernetes cluster where changes can happen. Instead of using a cloud provider, you’ll create a small local lab cluster **on your own machine**—perfect for learning, safe to experiment with, and easy to reset. *(kind uses about 3 GB of RAM while it’s running.)*
 
-We'll use [**kind**](https://kind.sigs.k8s.io/) (*Kubernetes in Docker*) to do this.
-It runs Kubernetes entirely in Docker containers and takes just a few seconds to spin up.
+We’ll use **[kind](https://kind.sigs.k8s.io/)** (*Kubernetes in Docker*) to do this. It runs a full Kubernetes cluster inside Docker containers and takes just a few seconds to start.
 
-### 1 · Create the cluster
+## Step 1 · Create the Cluster
 
-Run the following command to create a cluster called `gitops-loop-demo`.
-We also pin the Kubernetes version to `v1.29.0` so your experience matches the guide.
+Open your terminal—**PowerShell** on Windows, Terminal on macOS/Linux—and run the following command to create a cluster named `gitops-loop-demo`:
 
 ```bash
 kind create cluster \
   --name gitops-loop-demo \
-  --image kindest/node:v1.29.0
+  --image kindest/node:v1.32.2   # kind’s current default image (Kubernetes 1.32)
 ```
 
-> 💡 **Why specify the image?**
-> Pinning the Kubernetes version avoids version drift. Without this, some features or outputs may behave differently depending on when you run the tutorial.
+> 💡 We pin the image so everyone runs the same Kubernetes version—copy it as-is for now.
 
-Once the command completes, your cluster is running locally—no cloud login or config required.
+## Step 2 · Verify the Cluster is Ready
 
-### 2 · Check that the cluster is ready
-
-To confirm everything worked, run:
+Once the cluster is created, check that it’s running:
 
 ```bash
 kubectl get nodes
 ```
 
-You should see a single node with a status of `Ready`:
+You should see output similar to:
 
 ```
 NAME                            STATUS   ROLES           AGE   VERSION
-gitops-loop-demo-control-plane  Ready    control-plane   1m    v1.29.x
+gitops-loop-demo-control-plane  Ready    control-plane   1m    v1.32.x
 ```
 
-This tells you the node has joined the cluster and is ready to schedule pods.
+> ℹ️ **Why only one node?** kind creates a single control-plane node that can also run your pods. That keeps resource usage low and is perfect for local experiments. In production, you’d add separate worker nodes, but for this lab, one node is plenty.
 
-You can also check which cluster your `kubectl` is currently talking to:
+> ⚠️ **Cleanup tip:** When you’re finished—or if you want to start fresh—delete the cluster with:
+>
+> ```bash
+> kind delete cluster --name gitops-loop-demo
+> ```
 
-```bash
-kubectl config current-context
-```
-
-Expected output:
-
-```
-kind-gitops-loop-demo
-```
-
-This confirms that your context is pointed to the new cluster.
-It’s especially helpful if you’ve used Kubernetes before and have multiple clusters in your config.
-
-Your local cluster is now up and running.
-Next, let’s look at the application that GitOps will deploy—and the folder structure that declares what “should” be running.
+With your local cluster up and running, you're ready to explore the application that GitOps will deploy—and the folder structure that defines what “should” be running.
 
 ## 📦 Explore the App You’ll Deploy
 
-Now that your cluster is up and running, let’s take a look at the app that Flux will eventually manage.
+Now that your cluster is running, let’s take a quick look at the app that Flux will manage.
 
-We’re using a simple, no-surprises container:  
-[`nginxdemos/hello:plain-text`](https://hub.docker.com/r/nginxdemos/hello)
+We use a simple, no‑surprises container: [`nginxdemos/hello:plain-text`](https://hub.docker.com/r/nginxdemos/hello).
 
-This app:
-- Runs a small NGINX web server
-- Displays a static “Hello World” page
-- Starts fast, with no custom logic or config
+This image:
 
-> We picked it on purpose—so you can focus on learning GitOps, not debugging application code.
+* Runs a tiny NGINX web server
+* Serves a static **Hello World** page
+* Starts quickly, with no custom configuration
 
-### 🗂️ Understand the Folder Structure
+> We chose this minimal app so you can concentrate on GitOps rather than writing or troubleshooting application code.
 
-Navigate to:
+### 🗂️ Repository Folder Structure
 
-```
+Inside the repository you forked earlier, you’ll find the manifests that provision our **hello** container here:
+
+```text
 examples/day2-gitops-loop-demo/clusters/local/apps/hello/
 ```
 
-This is where your Kubernetes manifests live.
-
-Here's how it's structured:
+Directory layout:
 
 ```
 clusters/
@@ -192,28 +174,28 @@ clusters/
             └── service.yaml
 ```
 
-| Folder | Purpose |
-|--------|---------|
-| `clusters/` | All cluster-scoped config lives here |
-| `local/` | This is our environment name (you might see `dev`, `staging`, or `prod` in real setups) |
-| `apps/hello/` | Config for this app only (in a real repo, you'd often see `apps/api/`, `apps/frontend/`, etc.) |
+| Folder        | Purpose                                                                              |
+| ------------- | ------------------------------------------------------------------------------------ |
+| `clusters/`   | Top‑level folder for cluster configuration, organised by environment                 |
+| `local/`      | The **environment name** (in a real repo you might have `dev`, `staging`, or `prod`) |
+| `apps/hello/` | Manifests for this app only (other apps would get their own sub‑folders)             |
 
-> 🧠 GitOps isn’t just about putting YAML in Git—it’s about structuring your environments and apps in a way that’s scalable and understandable for teams.
+> 🧠 Notice how the repo separates **environments** (`local`) from **applications** (`hello`). This clear hierarchy keeps larger GitOps repositories maintainable as they grow.
 
 ### 📄 What the Manifests Declare
 
-Inside the `hello/` folder, you’ll find two YAML files. Let’s walk through what they do—at a glance.
+Inside `apps/hello/` you’ll find two YAML files. Here’s what they do.
 
 #### 🛠️ `deployment.yaml`
 
-This manifest tells Kubernetes:
-> "Start one pod running this container—and label it ‘hello’ so other components can find it."
+A **Deployment** is a Kubernetes controller that keeps a specified number of identical **pods** running.  A pod is the smallest schedulable unit in Kubernetes – think of it as one instance of our container.  The Deployment watches these pods and recreates them if they crash, ensuring the cluster always matches the declared state.
 
-Here’s what it includes:
-- `replicas: 1` — We want **one** copy of the app running  
-- `containers.image` — We’re using `nginxdemos/hello:plain-text`  
-- `ports.containerPort: 80` — The app listens on port 80  
-- `metadata.labels.app: hello` — This is important: it tags the pod so the **Service** can find it
+Key fields:
+
+* `replicas: 1` — run a single copy of the app
+* `image: nginxdemos/hello:plain-text` — the container image
+* `containerPort: 80` — the app listens on port 80
+* `labels.app: hello` — tags the pod for the Service selector
 
 ```yaml
 apiVersion: apps/v1
@@ -237,17 +219,17 @@ spec:
             - containerPort: 80
 ```
 
-> 💡 Later, when we scale this app down or delete it, we’ll come back to this `replicas: 1` line—and Flux will too.
+> 💡 Once Flux is connected to the cluster, it will watch this **Deployment** (and the accompanying **Service**) for drift. Later in the lab we’ll deliberately set `replicas` to 0; Flux will detect the mismatch and restore it to 1 automatically.
 
 #### 🛠️ `service.yaml`
 
-This manifest tells Kubernetes:
-> "Create a stable network address for the app, and route traffic to any pod labeled `app: hello`."
+A **Service** gives the pods behind our app a stable network name and virtual IP.  Instead of talking to pods directly (they come and go), other components talk to the Service.  The Service finds matching pods by their **labels** – in this case `app: hello` – and load‑balances traffic across them.
 
-Key parts:
-- `metadata.name: hello` — This will become the internal DNS name for our app
-- `selector.app: hello` — Matches pods labeled `app: hello`
-- `ports.port: 80` — The service will expose this on port 80
+Important bits:
+
+* `name: hello` — the Service name
+* `selector.app: hello` — matches pods with that label
+* `port: 80` — exposes port 80 inside the cluster
 
 ```yaml
 apiVersion: v1
@@ -262,289 +244,237 @@ spec:
       targetPort: 80
 ```
 
-### 🧭 Where We Stand (and What’s Coming)
+### 🧭 Where We Stand
 
-Right now, these files haven’t been applied yet. They’re just sitting in Git—*waiting to be noticed*. 
+> **✅ Done so far**
+> • Forked the GitHub repository (source of truth)
+> • Created a kind Kubernetes cluster
+> • Reviewed the manifests for the demo app
+>
+> **🟡 Still to come**
+> • Nothing applied to the cluster yet (`kubectl apply` not used)
+> • GitOps automation not running yet
 
-Soon, Flux will start watching this folder.  
-When it sees these manifests, it’ll apply them and keep them running—forever.
+The GitOps loop is still quiet for the moment—exactly where we want it before wiring Flux into the cluster.
 
-Here’s where you stand:
-✅ You've forked the **GitHub repository** to serve as your source of truth  
-✅ You've spun up a **Kubernetes cluster** using Kind  
-✅ You've examined the **manifests** for our simple application  
-🟡 You haven't applied anything to the cluster yet (`kubectl apply`)  
-🟡 No GitOps automation is running yet
+## 🔁 How Flux Runs the GitOps Loop
 
-We’re not there *yet*.
-
-> The loop—the part where Git drives the cluster—is still quiet.
-
-That’s intentional.
-
-This is the calm before the loop begins. And we’re ready for it.
-
-## 🔁 Understand How Flux Applies GitOps
-
-So far, you’ve created a Git repository, set up a cluster, and written two manifests.
-
-Normally, at this point in a Kubernetes workflow, you’d reach for this:
+So far, **we’ve** forked a repo, spun up a cluster, and reviewed the application manifests. In a typical workflow this is where you’d run:
 
 ```bash
-kubectl apply -f path/to/yaml
+kubectl apply -f path/to/your/yaml
 ```
 
-But this is **not** that kind of tutorial.  
-We’re not here to push YAML.  
-We’re here to let Git drive the cluster.
+Today we’ll do something different.  Instead of pushing YAML into the cluster, we’ll hand control to **Flux** and let it keep the cluster in sync with Git—think of it as switching the cluster to *autopilot*.
 
-> 🧠 In GitOps, the cluster is no longer passive.  
-> It reads from Git. It watches for changes. It reacts.
+### 🤖 Meet Flux – the GitOps Agent
 
-So how does that work? That’s where Flux comes in.
+Flux is an open‑source CNCF project—sitting alongside tools like Argo CD—that implements GitOps for Kubernetes. It installs as a bundle of controllers (`source-controller`, `kustomize-controller`, plus a few others) running as pods in the **flux-system** namespace. Once installed they:
 
-### 🤖 Meet Flux — the GitOps Agent
+1. **Watch** a Git repository for changes
+2. **Pull & apply** the desired state
+3. **Continuously reconcile** the cluster so its live state always matches Git
 
-Flux is a set of Kubernetes-native controllers.  
-Once installed, it runs *inside your cluster* and handles three core jobs:
+> This is the same **watch → pull → reconcile** loop we explored earlier—Flux turns that model into running software.
 
-1. **Watch a Git repository** for changes  
-2. **Pull and apply** what it finds  
-3. **Continuously reconcile** your cluster to match what’s in Git
-
-That’s the loop you’ve been learning about.  
-And Flux is the tool that makes it real.
-
-> Flux doesn’t just deploy once.  
-> It keeps checking Git—and correcting drift—over and over again.
+Flux checks Git every minute by default, but you can add a webhook so changes apply almost immediately.
 
 ### 🧩 How Does Flux Know What to Do?
 
-Flux works from two Kubernetes resources that you define:
+To bring that loop to life, Flux relies on two small **custom resources** you’ll create in the next step.  Think of them as its **instructions**:
 
-#### 📦 1. `GitRepository`  
-> _"Where should I look for configs?"_
+#### 1. `GitRepository` – *“Where should I look?”*
 
-This tells Flux which Git repo to watch, which branch to follow, and how often to check it.
+This object gives Flux the **URL**, **branch**, and **interval** (or webhook) for a Git repo.  The source‑controller fetches that repo on a schedule and keeps a cached copy inside the cluster.  At this point Flux is only *observing*—no YAML is applied yet.
 
-Flux doesn’t act on files yet—it just watches, fetches, and keeps the repo cached inside your cluster.
+#### 2. `Kustomization` – *“Okay, now what should I apply?”*
 
-#### 🛠️ 2. `Kustomization`  
-> _"Now that you’ve pulled the repo—what should I apply?"_
+A Kustomization points to a **folder** inside that repo, decides **how often** to reconcile it, and sets options such as **`prune`**:
 
-This tells Flux which folder to apply, how often to reconcile it, and what to do if something’s missing (like enabling **prune**).
-
-Together, these two resources define the **GitOps loop**:
-
-```
-GitRepository → [pull the repo]  
-Kustomization → [apply what’s inside it]
+```yaml
+prune: true
 ```
 
-### 🤔 Why Two Resources? Why Not Just One?
+Setting `prune: true` means resources removed from Git are also removed from the cluster—ideal for production. Turning it off (common in dev) limits Flux to create or update actions only.
 
-It’s a fair question.
+These two resources work together:
 
-Flux separates these roles to give you more flexibility:
+```
+GitRepository  ──► pull repo & keep cache
+Kustomization ──► apply folder & reconcile drift
+```
 
-| Design Choice | Why It Matters |
-|---------------|----------------|
-| Pull and apply are separate | You can cache multiple repos or paths without applying everything |
-| You can sync different paths on different schedules | Faster updates for apps, slower ones for infra |
-| You can delegate ownership cleanly | Teams can own specific folders or apps |
-| You can layer environments | A `staging` folder and a `prod` folder can be treated differently |
+#### Why two resources instead of one?
 
-> This separation is what makes Flux composable.  
-> It lets you scale GitOps across teams, clusters, and environments.
+* **Clear responsibilities** – one controller focuses on *fetching*, another on *applying*.
+* **Fine‑grained scopes** – you can track many repos or paths without auto‑applying all of them.
+* **Different cadences** – staging apps might reconcile every minute, while cluster‑wide policy syncs hourly.
+* **Delegated ownership** – each team can own its own `Kustomization` without touching the global repo settings.
 
-### 🧠 Recap: What Flux Needs From You
-
-You don’t need to write controllers.  
-You don’t need to build pipelines.
-
-You just need to define:
-- 🧭 **Where to look** (`GitRepository`)
-- 🗂️ **What to apply** (`Kustomization`)
-
-And then Flux does the rest.
-
-📌 In the next section, we’ll:
-- Install Flux in your cluster
-- Create these two resources
-- Connect the loop
-
-Once that’s done, you’ll commit your YAML—and Flux will take it from there.
-
-Let’s get to it.
+This separation keeps Flux flexible and maintainable as your repositories and teams grow.
 
 ## 🛠️ Install Flux and Connect the Loop
 
-You now understand the core idea:  
-Flux will watch your GitHub repo, pull changes, and continuously reconcile your cluster.
+You now understand the core idea: Flux will watch your GitHub repo, pull changes, and continuously keep your cluster in sync.
 
-It’s time to make that happen.
+In this section you will:
 
-In this section, you'll:
+✅ Install the **Flux CLI tool**
+✅ Install Flux controllers inside your cluster
+✅ Wire the controllers to your GitHub repo and start the loop
 
-✅ Install Flux into your Kubernetes cluster  
-✅ Connect Flux to your GitHub repository  
-✅ Define the GitOps loop that will run automatically
+### 🧰 Step 1 – Install the Flux CLI tool
 
-Let’s move step-by-step.
+The easiest way to install Flux is with the Flux CLI—a small tool that runs on your workstation and makes it simple to install Flux in your cluster and connect it to your GitHub repo.
 
-### 🧰 Step 1: Install the Flux CLI
+Below is some guidance to help you install the Flux CLI on your machine. Choose the install method that matches your OS—Homebrew on macOS, the script or a package on Linux, and Chocolatey on Windows.
 
-You’ll use the Flux CLI to:
-- Install Flux into your cluster
-- Create GitOps resources
-- Check synchronization status
+#### macOS
 
-> 💡 The CLI makes setting up GitOps clean, consistent, and fast.
+**Homebrew (recommended)** – quick to update and easy to remove
 
-#### 📦 Install on macOS or Linux:
+```bash
+brew install fluxcd/tap/flux
+```
+
+#### Linux
+
+**Official install script** – works on any distribution
 
 ```bash
 curl -s https://fluxcd.io/install.sh | sudo bash
 ```
 
-Then verify installation:
+**Ubuntu/Debian package example**
 
 ```bash
-flux --version
+sudo apt-get update && \
+  sudo apt-get install -y fluxcd
 ```
 
-#### 🪟 Install on Windows:
+*(See the **********************[Flux docs](https://fluxcd.io/docs/)********************** for instructions on other Linux distributions.)*
 
-Using [Chocolatey](https://chocolatey.org/):
+#### Windows
+
+**Chocolatey (recommended)**
 
 ```powershell
 choco install fluxcd
 ```
 
-Or download directly from the [Flux Releases](https://github.com/fluxcd/flux2/releases).
+If you prefer, download a standalone binary from the [Flux releases page](https://github.com/fluxcd/flux2/releases) and add it to your PATH.
 
-✅ Flux CLI installed—good. Let's move forward.
+Then verify the installation:
 
-### ✅ Step 2: Run a Pre-flight Check
+```bash
+flux --version   # any version ≥ 2.5 is fine
+```
 
-Before we install anything inside your cluster, let's confirm everything is ready:
+### ✅ Step 2 – Pre‑flight check
+
+Before Flux touches your Kubernetes cluster, double‑check you’re pointed at the right context. If you run multiple clusters, confirm `kubectl` is set to the **kind‑gitops‑loop‑demo** lab cluster:
+
+```bash
+kubectl config current-context
+```
+
+If you see **kind-gitops-loop-demo**, you’re on the right cluster.
+
+Now run:
 
 ```bash
 flux check --pre
 ```
 
-Flux will check:
-- Is `kubectl` available?
-- Is your cluster reachable?
-- Is your Flux CLI compatible?
+`flux check --pre` confirms that the cluster is reachable and that your CLI version is compatible with the Kubernetes version running in kind.
 
-> 🧠 **Behind the scenes:** Flux CLI uses your default kubeconfig (usually `~/.kube/config`) and checks your current context.
+### 🚀 Step 3 – Install Flux controllers
 
-✅ All green? You’re ready to go.
-
-### 🚀 Step 3: Install Flux Controllers
-
-Now we’ll install Flux itself:
+Now that your workstation is ready—and `kubectl` is pointing at **kind‑gitops‑loop‑demo**—use the **Flux CLI** to install the controllers:
 
 ```bash
 flux install
 ```
 
-This installs a small bundle of Kubernetes-native controllers into a namespace called `flux-system`:
+The command above creates the namespace **flux-system** and starts the controllers we met earlier:
 
-| Controller | Role |
-|------------|------|
-| `source-controller` | Pulls content from Git |
-| `kustomize-controller` | Applies manifests to the cluster |
+| Controller                                   | Purpose                                                     |
+| -------------------------------------------- | ----------------------------------------------------------- |
+| `source-controller`                          | Fetches and caches content from Git                         |
+| `kustomize-controller`                       | Applies manifests & reconciles drift                        |
+| `notification-controller`, `helm-controller` | Extra features (alerts, Helm); installed but not used today |
 
-> 💡 You might also see `notification-controller` and `helm-controller`.  
-> We won’t use them today—but they’re part of what makes Flux extensible for real-world environments.
+✅ The Flux controllers are now running in your cluster, but they aren’t watching Git yet.
 
-✅ Flux is now alive inside your cluster—but it’s not watching Git yet.
+> ℹ️ **Heads‑up:** deleting the **flux‑system** namespace removes Flux entirely; you would need to reinstall Flux if that happens.
 
-### 🔍 Step 4: Confirm Flux is Running
+### 🔗 Step 4 – Wire Flux to your GitHub repo
 
-Check the controllers:
+With the controllers in place, the next step is to point them at your Git repo and tell them which folder to apply.
 
-```bash
-kubectl get pods -n flux-system
-```
+#### 4.1 Create a **GitRepository**
 
-You should see something like:
-
-```
-NAME                                 READY   STATUS    RESTARTS   AGE
-source-controller-xxxxx              1/1     Running   0          10s
-kustomize-controller-xxxxx           1/1     Running   0          10s
-```
-
-✅ Controllers are running—steady and ready.
-
-### 🔗 Step 5: Connect Flux to Your GitHub Repo
-
-Now let’s plug Git into the loop.
-
-#### 📦 5.1 Create the GitRepository Resource
-
-This tells Flux where your repo lives—and how often to check it:
+First we’ll tell **source‑controller** which repo to watch. The command below creates a `GitRepository` object named `gitops-loop-demo`, points it at your fork on the `main` branch, and sets a 30‑second fetch interval so the cache stays fresh.
 
 ```bash
 flux create source git gitops-loop-demo \
-  --url=https://github.com/YOUR-USERNAME/GitOps-Days.git \    # ← replace YOUR-USERNAME
+  --url=https://github.com/YOUR-USERNAME/GitOps-Days.git \
   --branch=main \
-  --interval=30s
+  --interval=30s          # 30 s fetch keeps cache fresh
 ```
 
-> 💡 **Replace YOUR-USERNAME** with your actual GitHub username.
+You might notice we haven’t passed any credentials. That’s because the repo is public. If your repo is private, you’ll need to add `--username` and `--password` or use SSH flags. See the [Flux authentication docs](https://fluxcd.io/flux/components/source/gitrepositories/#authentication) for details.
 
-Once created, verify it:
+Now let’s verify that Flux is connected to the correct Git repo. Run:
 
 ```bash
 flux get sources git
 ```
 
-You should see something like:
+You should see output like:
 
 ```
 NAME                READY   STATUS    AGE
 gitops-loop-demo    True    Fetched   30s
 ```
 
-✅ Flux now sees your repo and is keeping a copy cached inside the cluster.
+#### 4.2 Create a **Kustomization**
 
-#### 🛠️ 5.2 Create the Kustomization Resource
+Now that Flux is watching your Git repo and has fetched the contents, we need to tell it which folder to apply to the cluster. This step connects the `Kustomization` controller to the `GitRepository` we created earlier (`gitops-loop-demo`). That controller keeps a cached copy of the repo, and the `Kustomization` now defines *what* to apply. In our case, we’re pointing it to the manifests under `clusters/local/apps/hello`, which map to the `local` environment and the `hello` app. We’ve also set the interval to 1 minute so that Flux will check and reconcile the cluster frequently.
 
-Now tell Flux **what** to apply:
+##### macOS / Linux
 
 ```bash
 flux create kustomization hello-app \
   --source=GitRepository/gitops-loop-demo \
   --path="./examples/day2-gitops-loop-demo/clusters/local/apps/hello" \
-  --prune=true \     # remove deleted resources
-  --interval=1m
+  --prune=true \
+  --interval=1m          # 1 min reconcile shows changes quickly
 ```
 
-What this does:
-- Targets the GitRepository you just created
-- Watches the `hello/` folder for updates
-- Automatically prunes resources if they’re deleted in Git
-- Syncs changes every minute
+##### Windows (PowerShell)
 
-✅ Flux now knows **where to look** and **what to apply**.
+The Windows version of this command uses PowerShell syntax, which differs from macOS/Linux because PowerShell doesn’t support backslash line continuations. Instead, it uses backticks (\`) to split long commands across lines.
 
-### 🧠 Quick Recap
+```powershell
+flux create kustomization hello-app `
+  --source=GitRepository/gitops-loop-demo `
+  --path "./examples/day2-gitops-loop-demo/clusters/local/apps/hello" `
+  --prune true `
+  --interval 1m
+```
 
-Let’s pause and see what you’ve done:
+> ⚠️ \*\*Be careful with \*\***`prune: true`** — if you remove a resource from your manifests and commit the change, Flux will delete the live resource from your cluster to match Git. This is intentional and ideal for production, where Git should reflect the true desired state. In development, it’s common to turn prune **off** to avoid accidental deletions while iterating.
 
-✅ Installed Flux controllers inside your cluster  
-✅ Connected Flux to your GitHub repo  
-✅ Pointed Flux at the folder that defines your application  
+### ✅ Quick recap
 
-Your cluster is now **watching Git**—but it hasn’t applied anything yet.
+At this stage:
 
-That’s about to change.
+* The Flux controllers are up and running in the **flux-system** namespace
+* Flux is watching your GitHub repository and caching updates every 30 seconds
+* The `hello-app` Kustomization is monitoring the correct folder and reconciling every minute
 
-Next, let’s watch the GitOps loop come to life.
+Everything is now in place. We’re ready to bring the GitOps loop to life—which we’ll do next.
 
 ## 🎬 Watch the GitOps Loop Come to Life
 
