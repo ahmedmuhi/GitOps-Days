@@ -37,10 +37,10 @@
 
 ## 🚀 Start Here
 
-### 📘 [Day 1 – What really is GitOps?](Day-1-What-really-is-GitOps.md)  
+### 📘 [Day 1 – What really is GitOps?](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)  
 Foundational theory and principles—learn why GitOps exists and what it solves.
 
-### 🧪 [Day 2 – Run Your First GitOps Loop](Day-2-Run-Your-First-GitOps-Loop.md)  
+### 🧪 [Day 2 – Run Your First GitOps Loop](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-GitOps-Loop.md)  
 Hands-on: install Flux, connect it to Git, watch reconciliation in real time, and test recovery from drift.
 
 ### ☁️ Day 3 – Run the Same GitOps Flow on AKS  
