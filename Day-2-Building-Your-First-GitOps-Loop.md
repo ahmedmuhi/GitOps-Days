@@ -725,7 +725,7 @@ Your Git repository declares `replicas: 1` for the `hello` deployment.
 Let’s override that manually.
 
 ```bash
-kubectl scale deployment/hello --replicas=0
+kubectl -n hello scale deployment hello --replicas=0
 ```
 
 Then monitor the deployment:
@@ -761,7 +761,7 @@ Let’s go further.
 You’ll now simulate a full deletion—both the Deployment and Service.
 
 ```bash
-kubectl delete deployment/hello service/hello
+kubectl -n hello delete deployment hello service hello
 ```
 
 Check the current state:
