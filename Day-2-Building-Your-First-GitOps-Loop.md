@@ -113,7 +113,7 @@ Open your terminal—**PowerShell** on Windows or Terminal on macOS/Linux—and 
 ```bash
 kind create cluster \
   --name gitops-loop-demo \
-  --image kindest/node:v1.32.2   # Kubernetes 1.32
+  --image kindest/node:v1.32.2
 ```
 
 > 💡 We specify the image version so your cluster uses a consistent Kubernetes release (`v1.32.2`), ensuring reproducible results across setups.
