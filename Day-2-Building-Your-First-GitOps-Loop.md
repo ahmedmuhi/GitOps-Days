@@ -763,21 +763,13 @@ This time, you’ll simulate a **full environment wipe-out** by deleting the ent
 This removes the Deployment, Service, Pod, and the namespace itself.
 
 ```bash
-<<<<<<< HEAD
 kubectl delete namespace hello
-=======
-kubectl -n hello delete deployment hello service hello
->>>>>>> 758ea64af9978e25dfb73a26cf89293cbe13d018
 ```
 
 Now observe how Flux responds:
 
 ```bash
-<<<<<<< HEAD
 kubectl -n hello get events --watch
-=======
-kubectl -n hello get deploy -w
->>>>>>> 758ea64af9978e25dfb73a26cf89293cbe13d018
 ```
 
 Initially, there will be nothing—because the namespace doesn’t exist yet.
