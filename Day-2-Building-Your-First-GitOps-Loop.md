@@ -681,7 +681,7 @@ Look for a pod named `hello` and a Service exposing it on port 80—these were c
 To access the app:
 
 ```bash
-kubectl port-forward svc/hello 8080:80
+kubectl -n hello port-forward svc/hello 8080:80
 ```
 
 Then open [http://localhost:8080](http://localhost:8080) in your browser. You should see:
