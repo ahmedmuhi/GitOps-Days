@@ -731,7 +731,7 @@ kubectl -n hello scale deployment hello --replicas=0
 Then monitor the deployment:
 
 ```bash
-watch kubectl get deployment hello
+kubectl -n hello get deploy -w
 ```
 
 *(Or run the command manually every few seconds.)*
@@ -767,7 +767,7 @@ kubectl -n hello delete deployment hello service hello
 Check the current state:
 
 ```bash
-watch kubectl get deployment,service
+kubectl -n hello get deploy -w
 ```
 
 You’ll briefly see:
