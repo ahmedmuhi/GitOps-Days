@@ -755,34 +755,57 @@ This was a **manual override**—Flux reversed it automatically.
 
 ---
 
-### 💥 Drift Test 2: Delete the App Completely
+### 💥 Drift Test 2: Delete the App Namespace
 
-Let’s go further.
-You’ll now simulate a full deletion—both the Deployment and Service.
+Let’s push things a little further.
+
+This time, you’ll simulate a **full environment wipe-out** by deleting the entire namespace that contains your app.
+This removes the Deployment, Service, Pod, and the namespace itself.
 
 ```bash
+<<<<<<< HEAD
+kubectl delete namespace hello
+=======
 kubectl -n hello delete deployment hello service hello
+>>>>>>> 758ea64af9978e25dfb73a26cf89293cbe13d018
 ```
 
-Check the current state:
+Now observe how Flux responds:
 
 ```bash
+<<<<<<< HEAD
+kubectl -n hello get events --watch
+=======
 kubectl -n hello get deploy -w
+>>>>>>> 758ea64af9978e25dfb73a26cf89293cbe13d018
 ```
 
-You’ll briefly see:
+Initially, there will be nothing—because the namespace doesn’t exist yet.
+But within a minute, you'll see the GitOps loop in action:
 
 ```
-No resources found in default namespace.
+LAST SEEN   TYPE     REASON              OBJECT                        MESSAGE
+27s         Normal   Scheduled           pod/hello-5cc47b57f5-zdwc8    Successfully assigned hello/hello-5cc47b57f5-zdwc8 to gitops-loop-demo-control-plane
+27s         Normal   Pulled              pod/hello-5cc47b57f5-zdwc8    Container image "nginxdemos/hello:plain-text" already present on machine
+27s         Normal   Created             pod/hello-5cc47b57f5-zdwc8    Created container: hello
+27s         Normal   Started             pod/hello-5cc47b57f5-zdwc8    Started container hello
+27s         Normal   SuccessfulCreate    replicaset/hello-5cc47b57f5   Created pod: hello-5cc47b57f5-zdwc8
+27s         Normal   ScalingReplicaSet   deployment/hello              Scaled up replica set hello-5cc47b57f5 from 0 to 1
 ```
 
-Then… Flux acts.
+💡 This output shows Flux has:
 
-Within about a minute:
+* Recreated the namespace
+* Re-applied the Deployment and Service
+* Scheduled and started a new Pod — all within seconds
 
-✅ The Deployment is recreated
-✅ The Service is restored
-✅ Your app is live again—no intervention needed
+To verify the system is fully recovered, run:
+
+```bash
+kubectl -n hello get deploy,svc,pods
+```
+
+You should see all resources fully restored and **READY** — just as they were before deletion.
 
 ---
 
