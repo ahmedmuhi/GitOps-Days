@@ -30,8 +30,6 @@ This series is for developers, DevOps engineers, platform teams, and system arch
 * Build self-healing infrastructure that automatically responds to change
 * Go from exploring GitOps concepts to deploying it in real-world clusters
 
----
-
 ## 🗺️ Your Learning Journey
 
 | Day | Theme                                                            | What You'll Learn                                                                       | What You'll Build                                        |
@@ -43,16 +41,12 @@ This series is for developers, DevOps engineers, platform teams, and system arch
 
 Each day builds on the last—giving you not just concepts, but working infrastructure you can grow and trust.
 
----
-
 ## ⚙️ How This Series Works
 
 1. **One hour per day.** Each session is designed to fit into a focused learning block—ideal for daily upskilling.
 2. **Concept first, then hands-on.** You'll start with a clear explanation of *why* the pattern matters—then implement it yourself.
 3. **Rooted in real practice.** The exercises reflect production-grade GitOps patterns used by modern teams—not simplified classroom examples.
 4. **Open and iterative.** This series is a GitOps project itself: contributions are welcome, and every update flows through Git.
-
----
 
 ## ✅ Prerequisites
 
@@ -63,8 +57,6 @@ Before you begin, make sure you have the following:
 * **A GitHub account and basic Git fluency:** Comfortable with `git clone`, opening pull requests, and navigating repositories
 
 > 🧭 *New to Kubernetes?* Start with [this guided introduction](https://kubernetes.io/docs/tutorials/) to get up to speed—then come back here when you're ready to begin.
-
----
 
 ## 🚀 Start Your GitOps Journey
 
@@ -81,8 +73,6 @@ Get hands-on: install Flux, connect it to Git, and see your cluster automaticall
 Apply the same GitOps patterns from Day 2 to a production-grade environment on Azure Kubernetes Service.
 *Coming soon — stay tuned!*
 
----
-
 ## 👥 Join the GitOps Community
 
 If this guide has helped you, consider:
@@ -92,8 +82,6 @@ If this guide has helped you, consider:
 * 🧪 **Trying it in your own team**—then sharing your feedback or improvements via pull request
 
 This repo is built using GitOps principles—every update, fix, and improvement is tracked, reviewed, and versioned.
-
----
 
 ## 🎯 Final Call to Action
 
