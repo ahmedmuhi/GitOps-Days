@@ -6,7 +6,14 @@
 
 **You're about to transform how you manage Kubernetes.**
 
-GitOps-Days is a hands-on learning journey... [existing welcome text]
+Welcome to **GitOps-Days**, a hands-on learning journey that transforms how you manage Kubernetes infrastructure. In just 5 focused sessions, you'll build systems that automatically detect drift, heal themselves, and give you back your weekends.
+
+**If you've ever…**
+
+* Found your production cluster mysteriously out of sync with Git—and spent hours playing detective
+* Made a "quick fix" at 3am that saved the day but haunts your documentation
+* Watched a carefully planned deployment unravel because someone ran an undocumented `kubectl` command
+* Wished your infrastructure could just fix itself when things drift
 
 **Then GitOps-Days is exactly where you need to be.**
 
