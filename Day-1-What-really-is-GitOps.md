@@ -437,7 +437,7 @@ You're one day into transforming how you manage Kubernetes. By Day 5, you'll be 
 
 **Ready to build your first self-healing system?**
 
-[Continue to Day 2: Building Your First Self-Healing System →](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-GitOps-Loop.md)
+[Continue to Day 2: Building Your First Self-Healing System →](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md)
 
 ---
 

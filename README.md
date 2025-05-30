@@ -52,7 +52,7 @@ In just 5 focused sessions (one hour each), you'll go from GitOps-curious to Git
 | Day | Focus | What You'll Build |
 |-----|-------|-------------------|
 | [**Day 1**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md) | **Understand:** What GitOps really is (and why it matters) | Mental model for GitOps principles |
-| [**Day 2**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-GitOps-Loop.md) | **Build:** Your first self-healing system with Flux | Local GitOps loop that auto-corrects |
+| [**Day 2**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md) | **Build:** Your first self-healing system with Flux | Local GitOps loop that auto-corrects |
 | **Day 3** | **Scale:** Taking GitOps to the cloud (AKS) | Production-ready cloud deployment |
 | **Day 4** 🔧 | **Operate:** Real-world patterns & troubleshooting | Robust GitOps workflows |
 | **Day 5** 📋 | **Advance:** Your GitOps toolkit & what's next | Complete GitOps foundation |
