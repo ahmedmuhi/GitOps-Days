@@ -9,7 +9,7 @@ spec:
       matchLabels:
         app: hello
     template:
-      metadat:
+      metadata:
         labels:
           app: hello
         spec:
