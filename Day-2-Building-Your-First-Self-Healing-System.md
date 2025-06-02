@@ -258,7 +258,7 @@ Now tell Flux what to deploy from that repository:
 ```bash
 flux create kustomization hello-app \
   --source=GitRepository/gitops-loop-demo \
-  --path="./examples/day2-gitops-loop-demo/clusters/local/apps/hello" \
+  --path="./examples/day2/clusters/local/apps/hello" \
   --prune=true \
   --interval=1m
 ```
