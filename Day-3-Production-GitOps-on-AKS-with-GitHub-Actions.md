@@ -345,8 +345,26 @@ flux bootstrap github \
 > [!NOTE]
 > The `--personal` flag tells Flux this is a personal account, not an organizational one. Flux will expect authentication via personal access token rather than organization-level credentials.
 
+Once bootstrap completes, let's speed up the reconciliation:
+
+```bash
+# Create a Kustomization with 1-minute interval
+flux create kustomization flux-system \
+  --source=GitRepository/flux-system \
+  --path="./examples/day3/clusters/aks" \
+  --prune=true \
+  --interval=1m \
+  --export > flux-system-1m.yaml
+
+# Update the existing Kustomization
+kubectl apply -f flux-system-1m.yaml
+
+# Clean up the temporary file
+rm flux-system-1m.yaml
+```
+
 > [!TIP]
-> **Faster feedback**: We've pre-configured Flux in your repository to check for changes every minute instead of the default 10 minutes. This means you'll see your deployments happen quickly during the tutorial. You'll find this setting in `examples/day3/clusters/aks/flux-system/kustomization.yaml` if you're curious!
+> **Faster feedback**: Bootstrap creates a 10-minute default interval. We just updated it to match Day 2's 1-minute responsiveness. This `kubectl apply` here is for Flux configuration only—your actual deployments will still happen through pure Git!
 
 ### Watch Bootstrap Work Its Magic
 
