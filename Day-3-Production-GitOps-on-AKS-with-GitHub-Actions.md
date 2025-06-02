@@ -335,15 +335,18 @@ Now run the bootstrap command:
 
 ```bash
 flux bootstrap github \
-  --owner "$GITHUB_USER" \
-  --repository GitOps-Days \
-  --branch main \
-  --path examples/day3/clusters/aks \
+  --owner=$GITHUB_USER \
+  --repository=GitOps-Days \
+  --branch=main \
+  --path=examples/day3/clusters/aks \
   --personal
 ```
 
 > [!NOTE]
 > The `--personal` flag tells Flux this is a personal account, not an organizational one. Flux will expect authentication via personal access token rather than organization-level credentials.
+
+> [!TIP]
+> **Faster feedback**: We've pre-configured Flux in your repository to check for changes every minute instead of the default 10 minutes. This means you'll see your deployments happen quickly during the tutorial. You'll find this setting in `examples/day3/clusters/aks/flux-system/kustomization.yaml` if you're curious!
 
 ### Watch Bootstrap Work Its Magic
 
