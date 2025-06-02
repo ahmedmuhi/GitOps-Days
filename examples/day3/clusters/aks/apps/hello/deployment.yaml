@@ -5,16 +5,16 @@ metadata:
   namespace: hello
 spec:
   replicas: 1
-    selector:
-      matchLabels:
+  selector:
+    matchLabels:
+      app: hello
+  template:
+    metadata:
+      labels:
         app: hello
-    template:
-      metadata:
-        labels:
-          app: hello
-        spec:
-          containers:
-          - name: hello
-            image: nginxdemos/hello:plain-text
-            ports:
-            - containerPort: 80
+    spec:
+      containers:
+      - name: hello
+        image: nginxdemos/hello:plain-text
+        ports:
+        - containerPort: 80
