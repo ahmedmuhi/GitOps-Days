@@ -32,7 +32,7 @@ Put simply:
 > If it’s not in Git, it shouldn’t exist in the cluster.
 > If it’s in Git, the cluster should match it.
 
-![GitOps loop comic](assets/images/What-Exactly-Is-GitOps.png)
+<img src="assets/images/What-Exactly-Is-GitOps.png" width="50%" alt="GitOps loop comic">
 The loop is simple: declare your infrastructure as code, commit it to Git, the controller pulls and enforces it, and the cluster stays aligned automatically.
 
 In practice, that looks like this:
@@ -124,7 +124,7 @@ The cluster follows what’s in Git, and only what’s in Git. That’s not just
 
 You’ve seen how GitOps works inside a team’s workflow. But how does it stack up against the way most teams deploy today? Let’s put them side by side.
 
-![CI/CD vs GitOps comic](assets/images/CI-CD-vs-GitOps-Comparison.png)
+<img src="assets/images/CI-CD-vs-GitOps-Comparison.png" width="50%" alt="CI/CD vs GitOps comic">
 ![Push vs Pull comic](assets/images/Pull-vs-Push-Model.png)
 
 The difference comes down to who makes the change, and how it gets into your cluster.
@@ -181,7 +181,7 @@ Here they are, plain and simple:
 
 If someone tells you they “do GitOps,” these are the four things you should be able to see in action. And when you use Flux, Argo CD, or other GitOps tools, this is exactly what they’re implementing for you.
 
-![The Four GitOps Principles](assets/images/The-Four-GitOps-Principles.png)
+<img src="assets/images/The-Four-GitOps-Principles.png" width="50%" alt="The Four GitOps Principles">
 
 ## GitOps in Context: Your Journey Forward
 
