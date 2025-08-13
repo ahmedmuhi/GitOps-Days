@@ -1,120 +1,118 @@
 # GitOps-Days ⏲️🚀
 
-> **"GitOps: Infrastructure that heals itself."**
+Commit, Reconcile, Ship.
+*Learn declarative, pull-based delivery that self-heals.*
 
 ## 👋 Welcome
 
-**You're about to transform how you manage Kubernetes.**
+Run Kubernetes the Git-first way. Changes land in Git, and the cluster follows. When trouble shows up, revert cleanly to a previous state. If that’s the predictability you’ve been missing after last-minute tweaks and forgotten settings, you’ll feel right at home here.
 
-Welcome to **GitOps-Days**, a hands-on learning journey that transforms how you manage Kubernetes infrastructure. In just 5 focused sessions, you'll build systems that automatically detect drift, heal themselves, and give you back your weekends.
+## 🚀 Start here
 
-**If you've ever experienced any of these scenarios:**
+Pick the path that fits how you like to learn.
 
-* **The Mystery Mismatch:** Your Git repository says the app should have 3 replicas, but somehow it's running 5 in production—and nobody knows who changed it or when
+* **I want the idea first.** Read **[Day 1: What really is GitOps?](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)**
+* **I learn by doing.** Go to **[Day 2: Building Your First Self-Healing System](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md)**
+* **I am ready for cloud.** Jump to **[Day 3: Production GitOps on AKS with GitHub Actions](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md)**
 
-* **The Undocumented Fix:** You got paged at night, fixed a critical issue directly on the cluster, meant to update the documentation later... but in the rush of the next day, it never happened. Now that fix lives only in the cluster
+What you need: Git, Docker, kubectl. Day 3 also needs an Azure account and Azure CLI.
 
-* **The Surprise Breaking Change:** Your deployment failed because someone manually tweaked a ConfigMap last week for a quick test—and now production depends on that undocumented change
+> **Quick terms**
+>
+> * **Desired state**: what Git says the cluster should look like.
+> * **Drift**: when the cluster no longer matches Git.
+> * **Controller**: software in the cluster, like Flux or Argo CD, that keeps it matching Git.
+> * **Self-healing**: the controller restores the cluster to what is in Git.
 
-* **The Sync Uncertainty:** You know your clusters have drifted from your Git configs, but you're hesitant to reconcile them because you can't predict what might break
+## 🎯 What you will achieve
 
-**Then GitOps-Days is exactly where you need to be.**
+* Keep clusters aligned with Git and recover fast when things change.
+* Build a self-healing loop locally and see it fix deliberate breaks.
+* Repeat the same loop in Azure Kubernetes Service with production-minded patterns.
+* Plan a simple CI job that feeds the loop with fresh images. *(Day 4, planned)*
+* Map multi-environment and secrets patterns you can adopt. *(Day 5, planned)*
 
-If you relate to any of these situations—or if you just want to prevent them from happening—you're in the right place.
+## 🗺️ Your learning path
 
-No more manual `kubectl apply`. No more configuration drift. Just infrastructure that stays in sync with Git, automatically.
+**Status:** Days 1–3 ready now. Days 4–5 planned.
 
-## 🎯 What You'll Achieve
+| Day                                                                                                                   | Focus                                                | What You'll Build                    |
+| --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------ |
+| [**Day 1**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)                        | **Understand:** what GitOps is and why it matters    | A clear mental model                 |
+| [**Day 2**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md)      | **Build:** your first self-healing system with Flux  | Local GitOps loop that auto-corrects |
+| [**Day 3**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md) | **Scale:** take the same loop to AKS                 | Production-ready cloud deployment    |
+| **Day 4**                                                                                                             | **Operate:** real-world patterns and troubleshooting | Robust GitOps workflows              |
+| **Day 5**                                                                                                             | **Advance:** tool choices and next steps             | Your GitOps roadmap                  |
 
-In just 5 focused sessions (one hour each), you'll go from GitOps-curious to GitOps-capable:
+## 🛠️ What you need
 
-- **Understand** why GitOps exists and how it solves drift forever (Day 1)
-- **Build** your first self-healing system that auto-fixes problems (Day 2)  
-- **Scale** to the cloud with production-ready patterns on AKS (Day 3)
-- **Master** real-world workflows and troubleshooting techniques (Day 4)
-- **Advance** with tool comparisons and your personal roadmap (Day 5)
+* Docker Desktop or Docker Engine
+* kubectl
+* Git and a GitHub account
+* Flux CLI
+* Azure CLI and an Azure subscription for Day 3
+* A typical laptop with at least a few gigabytes of RAM for the local labs
 
-## 🚀 Start Your Journey
+> **Tested with**
+> Current stable releases of Docker, kubectl, kind, Flux, and Azure CLI. If you hit a version snag, open an issue and we will help.
 
-⭐ **First:** Star this repository to get updates as new days are released!
+## 🔄 Stay up to date (sync your fork)
 
-📖 **Then:** Jump straight to [**Day 1 – What GitOps Really Is (And Why It Matters)**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md) and start building self-healing infrastructure.
+We improve this course often. To pull updates without re-forking:
 
-**Want the full overview first?** Keep reading below.
+```bash
+# inside your local clone of your fork
+git remote add upstream https://github.com/ahmedmuhi/GitOps-Days.git
+git fetch upstream
+git checkout main
+git merge upstream/main    # or: git rebase upstream/main
+git push origin main
+```
 
-## 🗺️ Your Complete Learning Path
+Prefer a stable snapshot? Check out a tag, for example:
 
-### Journey 1: Zero to GitOps-Capable (Days 1-5)
-*Transform from GitOps-curious to GitOps-capable in one focused week*
+```bash
+git fetch --tags
+git checkout v0.3
+```
 
-**Status:** Days 1-2 ready now, Days 3-5 coming soon! ⚡
+## 🗂️ Repo map
 
-| Day | Focus | What You'll Build |
-|-----|-------|-------------------|
-| [**Day 1**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md) | **Understand:** What GitOps really is (and why it matters) | Mental model for GitOps principles |
-| [**Day 2**](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md) | **Build:** Your first self-healing system with Flux | Local GitOps loop that auto-corrects |
-| **Day 3** | **Scale:** Taking GitOps to the cloud (AKS) | Production-ready cloud deployment |
-| **Day 4** 🔧 | **Operate:** Real-world patterns & troubleshooting | Robust GitOps workflows |
-| **Day 5** 📋 | **Advance:** Your GitOps toolkit & what's next | Complete GitOps foundation |
+```
+/Day-1-What-really-is-GitOps.md
+/Day-2-Building-Your-First-Self-Healing-System.md
+/Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md
+/examples/day2/...   # manifests for the local lab
+/examples/day3/...   # manifests for the AKS lab
+```
 
-<details>
-<summary><b>🎯 What "GitOps-Capable" means</b></summary>
+## ❓ FAQ
 
-After Journey 1, you'll be able to:
-- Explain why GitOps matters (not just what it is)
-- Set up GitOps for real projects
-- Handle secrets and troubleshoot issues
-- Make informed decisions about tools
-- Know what to learn next
+* **How do Helm charts fit in?** Put the chart, version, and values in Git. The controller applies it and keeps it up to date.
+* **What about secrets?** Use an external manager or encrypted manifests so nothing sensitive lives in plain text.
+* **Do I need to delete my fork to get updates?** No. Use the sync steps above.
+* **What if I break the cluster during labs?** Reconciliation brings it back. Worst case, recreate the kind cluster and reapply Flux.
 
-</details>
+## 💬 Join the conversation
 
-## 🛠️ What You'll Need
+This series is actively evolving.
 
-**Tools to install:**
-- Docker Desktop or Docker Engine (≥24.0)
-- kubectl (≥1.32)
-- Git and a GitHub account (free tier works perfectly)
-- About 4GB RAM for the local labs
+* Found an issue or a typo? [Open an issue](https://github.com/ahmedmuhi/GitOps-Days/issues)
+* Have suggestions? Share them in an issue or pull request
+* Sharing your progress? Use #GitOpsDays
 
-**Helpful background (but not required!):**
-- If you've worked with Kubernetes before, you'll feel right at home
-- New to Kubernetes? No worries—we'll guide you through what you need
-- YAML experience helps, but we'll explain everything as we go
+## 🧭 Roadmap
 
-The beauty of GitOps is that it simplifies Kubernetes operations—so this might actually be a great way to deepen your K8s understanding!
+* **Day 4**: CI pipeline that feeds the loop, image promotion, and basic rollout gates
+* **Day 5**: Multi-environment layout and common secrets patterns
+* Future topics will follow what helps learners most
 
-## 💡 How This Series Works
+## 📚 Additional resources
 
-- **One hour per day** - Focused sessions that fit your schedule
-- **Concept → Practice** - Understand why, then build it yourself
-- **Real patterns** - Production-grade approaches, not toy examples
-- **Learn by doing** - Hands-on from Day 2 onward
-
-## 💬 Join the Conversation
-
-This series is actively being developed!
-- **Found an issue?** Let me know: [open an issue](https://github.com/ahmedmuhi/GitOps-Days/issues)
-- **Have suggestions?** I'd love to hear them
-- **Share your progress:** Use #GitOpsDays on social media
-- More community features coming as we grow
-
-## 🚧 What's Next
-
-### Journey 2: Team-Ready GitOps *(Coming 2025)*
-Scale from solo success to team excellence. Multi-environments, migrations, RBAC, and collaborative workflows.
-
-### Journey 3: Production-Grade GitOps *(Planned)*
-Enterprise patterns, disaster recovery, compliance, and operating GitOps at scale.
-
-As our community grows, we'll add journeys based on what you need most.
-
-## 📚 Additional Resources
-
-- [Official Flux Documentation](https://fluxcd.io/flux/)
-- [CNCF GitOps Working Group](https://opengitops.dev/)
-- [Kubernetes Basics](https://kubernetes.io/docs/tutorials/) (if you're just starting with K8s)
+* [Flux documentation](https://fluxcd.io/flux/)
+* [CNCF GitOps Working Group](https://opengitops.dev/)
+* [Kubernetes tutorials](https://kubernetes.io/docs/tutorials/)
 
 ---
 
-**Ready to transform how you manage Kubernetes?** ⭐ Star this repo and [start with Day 1](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)!
+Ready to begin? Start with **[Day 1: What really is GitOps?](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-1-What-really-is-GitOps.md)**.
