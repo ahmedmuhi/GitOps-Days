@@ -724,7 +724,7 @@ THe core GitOps loop stays the same - Git defines, Flux enforces, but the stage 
 
 **See you tomorrow for Day 3!**
 
-[Continue to Day 3: GitOps in the Cloud →](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md)
+[Continue to Day 3: GitOps in the Cloud →](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md)
 
 > [!NOTE]
 > *Proud of what you built? Share your success! #GitOpsDays*

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello
+  namespace: hello
+spec:
+  type: LoadBalancer        # ← this is the only required change on AKS
+  selector:
+    app: hello
+  ports:
+    - port: 80
+      targetPort: 80

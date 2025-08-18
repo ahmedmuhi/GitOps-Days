@@ -18,7 +18,7 @@ There’s more than one way to get into GitOps - pick the path that fits how you
 
 * **Want the big picture first?** Start with **[Day 1: What really is GitOps?](./Day-1-What-really-is-GitOps.md)** and build a clear mental model.
 * **Learn best by doing?** Jump into **[Day 2: Building Your First Self-Healing System](./Day-2-Building-Your-First-Self-Healing-System.md)** and see it in action.
-* **Ready for cloud from the start?** Head to **[Day 3: Production GitOps on AKS with GitHub Actions](./Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md)** and go straight to a production-grade setup.
+* **Ready for cloud from the start?** Head to **[Day 3: Production GitOps on AKS with GitHub Actions](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md)** and go straight to a production-grade setup.
 
 > **You’ll need**: Git, Docker, and `kubectl` for Days 1-2. Day 3 also needs an Azure account and the Azure CLI.
 
@@ -62,7 +62,7 @@ For cloud labs (Day 3):
 | -------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------ |
 | [**Day 1**](./Day-1-What-really-is-GitOps.md)                        | **Understand**: what GitOps is and why it matters    | A clear mental model                 |
 | [**Day 2**](./Day-2-Building-Your-First-Self-Healing-System.md)      | **Build**: your first self-healing system with Flux  | Local GitOps loop that auto-corrects |
-| [**Day 3**](./Day-3-Production-GitOps-on-AKS-with-GitHub-Actions.md) | **Scale**: take the same loop to AKS                 | Production-ready cloud deployment    |
+| [**Day 3**](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) | **Scale**: take the same loop to AKS                 | Production-ready cloud deployment    |
 | **Day 4**                                                            | **Operate**: real-world patterns and troubleshooting | Robust GitOps workflows              |
 | **Day 5**                                                            | **Advance**: tool choices and next steps             | Your GitOps roadmap                  |
 
