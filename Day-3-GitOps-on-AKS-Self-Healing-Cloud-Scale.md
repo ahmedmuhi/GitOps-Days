@@ -79,7 +79,7 @@ Flux's bootstrap command will commit files back to your repo — so it needs per
 
 1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens**.
 2. Scope it to **your fork only**, with `contents: read/write` permission.
-3. Copy the token immediately — GitHub only shows it once.
+3. Copy the token immediately — GitHub only shows it once. Save it somewhere secure; you'll use it again in Day 4.
 
 **Export your credentials:**
 ```shell
@@ -483,7 +483,7 @@ The reconciliation loop — watch, compare, reconcile — worked identically on 
 
 That's the core promise of GitOps, verified across three days: **declare it in Git, and the system makes it real — wherever it runs.**
 
-In Day 4, the question shifts from "does it work?" to "how do teams run this in production?" — CI pipelines that feed the loop, multi-environment layouts, and managing secrets safely in a GitOps workflow.
+In Day 4, the question shifts from "does it work?" to "how do teams run this in production?" — the CI pipeline that feeds the loop, and the repo patterns that make GitOps work across multiple environments.
 
 **Ready to go production-ready?** [Continue to Day 4 →](./Day-4-Production-GitOps-Patterns.md)
 
