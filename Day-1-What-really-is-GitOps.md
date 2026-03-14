@@ -1,216 +1,216 @@
-# 🌟 Day 1 – What really is GitOps?
+# Day 1 – What really is GitOps?
 
-If you’ve worked with Kubernetes for more than a few weeks, you’ve seen it:
-what’s running in the cluster drifts away from what you thought was deployed.
-A manual fix here, an emergency tweak there… and before long, the state in your cluster and the state in your Git repo tell two different stories.
+> **No tools needed today.** This is all mental model — by the end, you'll be able to predict what a GitOps controller does before you've ever touched one.
 
-That gap is where incidents start and trust in your deployments erodes.
+Let's get straight into it.
 
-Today we’re going to close that gap - permanently.
-Not with more scripts or a bigger CI pipeline, but by changing **where** your source of truth lives and **how** your cluster keeps itself aligned with it.
+By the end of this session, you'll be able to:
 
-By the end of this session, you’ll be able to:
+- State GitOps in one clear sentence.
+- Trace the reconciliation loop — watch, compare, reconcile — and explain what happens at each step.
+- Explain why pull beats push for Kubernetes, and what that changes for drift, security, and recovery.
+- Name the four CNCF principles and recognise them in action.
 
-* State GitOps in one clear sentence.
-* Trace the Git → controller → cluster loop.
-* Explain why pull beats push for Kubernetes - and why it changes the game for drift, security, and recovery.
+## The idea — and the loop behind it
 
-Let’s start with the most important question: **what exactly is GitOps?**
+If you've used Kubernetes for any length of time, you've seen drift — what's running in the cluster quietly diverges from what you thought was deployed. A manual fix here, an emergency tweak there, and before long your cluster and your repo tell two different stories.
 
-## What exactly is GitOps?
+Teams have tried to close that gap. Configs in Git, deployment scripts, CI pipelines that run on every commit. They help, but they still leave a window: manual changes or external systems can sneak in between pipeline runs, and that's where configuration rot takes hold.
 
-So what *is* GitOps, really? Let’s start with how most teams try to fight drift - and why those fixes don’t quite close the gap.
+In 2017, engineers at Weaveworks proposed a different approach: instead of pushing changes into the cluster, let the cluster pull its own configuration from Git — and enforce it continuously. The idea gained traction quickly. Tools like Flux and Argo CD put it into practice, and the CNCF's [OpenGitOps project](https://opengitops.dev) formalised the core principles so teams everywhere could work from the same playbook.
 
-You’ve probably seen this: configs stored in Git but applied manually, deployment scripts that push updates, or CI/CD pipelines that run after every commit. They help, sure, but they still leave a gap between what’s in your repo and what’s running in your cluster. Manual changes or external systems can sneak in, and that’s where drift and configuration rot take hold.
+The result is a single idea:
 
-This isn’t just your team’s problem. Back in 2017, engineers at Weaveworks popularised a different way: treat Git as the single source of truth, and let the cluster enforce it for itself. The idea caught on quickly. Tools like Flux and Argo CD put it into practice, and the CNCF’s [OpenGitOps project](https://opengitops.dev) formalised the core principles so teams everywhere could work from the same playbook.
+**GitOps means storing the desired state of your system in Git, and running a controller inside the cluster that continuously pulls that state and reconciles the cluster to match it.**
 
-Put simply:
+> If it's not in Git, it shouldn't exist in the cluster.
+> If it's in Git, the cluster should match it.
 
-**GitOps means storing the desired state of your system in Git, and running a controller inside each cluster that continuously pulls that state and reconciles the cluster to match it.**
+<img src="assets/images/What-Exactly-Is-GitOps.png" width="50%" alt="GitOps overview comic — define infrastructure as code, store configuration in Git, and a system ensures the cluster matches it.">
 
-> If it’s not in Git, it shouldn’t exist in the cluster.
-> If it’s in Git, the cluster should match it.
+That controller follows a loop — and it's worth naming it now, because everything else in this series builds on it:
 
-<img src="assets/images/What-Exactly-Is-GitOps.png" width="50%" alt="GitOps loop comic">
-The loop is simple: declare your infrastructure as code, commit it to Git, the controller pulls and enforces it, and the cluster stays aligned automatically.
+**Watch → Compare → Reconcile**
 
-In practice, that looks like this:
+- **Watch** — the controller monitors your Git repository for changes.
+- **Compare** — it checks what Git says (desired state) against what's actually running in the cluster (actual state).
+- **Reconcile** — if there's a difference, it updates the cluster to match Git.
 
-1. You declare your infrastructure and application configs as code.
-2. You commit the changes to Git - now it’s versioned and visible.
-3. The in-cluster controller compares Git (desired) with the cluster (actual) and fixes any differences.
-4. The cluster stays aligned, and drift never builds up.
+That's the **reconciliation loop**. It runs continuously on a short, predictable cycle — like a heartbeat keeping your cluster aligned. When we refer to "the loop" from here on, this is what we mean.
 
-Storing YAML in Git is a good first step. GitOps goes further - your cluster pulls from Git and enforces it, continuously. Let’s see what that changes.
+## Beyond just storing YAML in Git
 
-## Beyond Just Storing YAML in Git
+You might be thinking, *"Hang on — we already keep our manifests in Git. Isn't that GitOps?"*
 
-You might be thinking, *“Hang on - we already keep our manifests in Git. Isn’t that GitOps?”*
-That’s a good start… but it’s not the whole story.
+It's a fair question. Most teams do store their Kubernetes configs in Git, and that's a good habit. But here's the thing: storing YAML in Git is like writing down the rules and never checking if anyone's following them.
 
-Here’s why: storing YAML in Git is like writing down the rules but never checking if anyone’s following them. Without something constantly making sure your cluster matches those files - and fixing it when it doesn’t - drift will sneak back in.
+The missing piece is a **controller**.
 
-When you go from “YAML in Git” to **GitOps**, a few key things change:
+Without one, your Git repo is a record — a place where intentions are documented but never enforced. Changes might get applied by a script, a pipeline, or someone running `kubectl apply` from their laptop. And between those moments, anything can happen. Someone edits a resource directly. A quick fix goes in and never makes it back to Git. The cluster drifts, and your repo doesn't know about it.
 
-* **Authority** - You (or a CI job) are no longer the one applying changes; an in-cluster controller does it, all the time, without forgetting.
-* **Direction** - Instead of pushing changes into the cluster, the cluster pulls its own configuration from Git.
-* **Timing** - Instead of waiting until you remember to run a command, reconciliation happens automatically on a short, predictable cycle.
-* **Evidence** - Instead of ad-hoc CLI changes, every change leaves a commit and a review trail.
+Add a controller, and everything shifts.
 
-Here’s how that plays out:
+YAML in Git without a controller is a record.
+YAML in Git *with* a controller is a **system**.
+
+That one addition — software running inside the cluster, watching Git and acting on what it finds — changes four things at once:
+
+**Authority** moves from you to the controller. You're no longer the one applying changes, remembering to run commands, or hoping the pipeline caught everything. The controller does it, every cycle, without forgetting.
+
+**Direction** reverses. Instead of pushing changes into the cluster from the outside, the cluster pulls its own configuration from Git. Nothing external needs access to your cluster's API.
+
+**Timing** becomes continuous. Instead of changes landing whenever someone triggers a pipeline or runs a command, reconciliation happens automatically on a short, predictable cycle. Drift doesn't get a chance to accumulate.
+
+**Evidence** becomes complete. Every change flows through Git — commits, branches, pull requests, reviews. There are no side doors. If something changed, you can trace exactly when, why, and who.
+
+Here's what that looks like in practice:
 
 You merge a PR that sets `replicas: 3`.
 Later, someone bumps it to 5 by hand.
 In the next reconciliation cycle, the controller spots the mismatch and sets it back to 3.
-No Slack pings. No late-night debugging. If you *really* want 5, you change Git. If you need to undo a bad change, you revert the commit.
+No Slack pings. No late-night debugging. If you *really* want 5 replicas, you change Git. If you need to undo a bad change, you revert the commit.
 
-The takeaway?
-YAML in Git tells you what *should* happen. GitOps makes sure it *does* happen - automatically, continuously, and without you chasing it.
+That's the line between "we store YAML in Git" and "we do GitOps." The YAML was never the point — the enforcement is.
 
-## How the GitOps Engine Works
+## The reconciliation loop in detail
 
-So far, we’ve been talking about *what* GitOps is. Let’s talk about *how* it actually works.
+You've seen what the loop does. Now let's open it up and watch one full cycle happen.
 
-At the heart of GitOps is a small piece of software called a **GitOps controller** that runs inside your cluster. Its job is simple but relentless:
+Imagine you have a Git repo containing a Kubernetes Deployment manifest. It declares a simple nginx pod with `replicas: 3` and an image tag of `nginx:1.25`. The GitOps controller — let's say Flux — is installed in your cluster and pointed at that repo.
 
-1. **Watch** your Git repository for changes.
-2. **Compare** what’s in Git (desired state) with what’s running in the cluster (actual state).
-3. **Reconcile** any differences by updating the cluster to match Git.
+Here's what one cycle looks like:
 
-That’s it: **watch → compare → reconcile**.
-This is the GitOps loop, and it runs continuously - on a short, predictable cycle - like a steady heartbeat keeping your cluster healthy.
+### Watch
 
-Here’s what that means in real life:
-If someone makes a direct change in the cluster - maybe tweaks an environment variable - the controller spots it in the next cycle and flips it back to match Git. No drama. No surprises. And no chasing down mysterious changes later.
+The controller polls your Git repository on a regular interval — typically every few minutes. It's not waiting for you to trigger anything. It checks whether the repo has changed since the last time it looked.
 
-With that foundation in place, we can look at how this loop shapes your day-to-day workflow.
+This time, it finds a new commit. You updated the image tag from `nginx:1.25` to `nginx:1.26`.
 
-## GitOps Workflows in Practice
+### Compare
 
-Now that you understand *how* the GitOps engine works, let’s zoom out and see how it fits into your everyday workflow.
+The controller now holds two pictures of reality:
 
-Here’s the big picture at a glance:
+- **Desired state** — what Git says: `nginx:1.26`, three replicas.
+- **Actual state** — what's running in the cluster: `nginx:1.25`, three replicas.
+
+It compares them field by field. Replicas match. Image tag doesn't.
+
+### Reconcile
+
+The controller applies the difference. It updates the Deployment in the cluster to use `nginx:1.26`. Kubernetes does what it always does — rolls out new pods, drains the old ones.
+
+No pipeline triggered this. No one ran `kubectl apply`. The cluster saw the intent in Git and acted on it.
+
+### And then it keeps going
+
+This is the part that separates GitOps from a one-time sync. The cycle doesn't stop after one successful reconciliation — it starts again. The controller polls Git again. Compares again. If everything matches, it does nothing. If something has drifted — say someone manually scaled the Deployment to 5 replicas — it corrects it on the next pass.
+
+That's why we called it a heartbeat in the previous section. It's not a deployment event. It's a continuous process. The cluster is never more than one cycle away from matching Git.
+
+### What the controller doesn't do
+
+It's worth being clear about boundaries. The controller reconciles what's declared in Git. It doesn't make decisions about *what should be* in Git — that's your job, through commits and pull requests. It doesn't build images, run tests, or manage CI. It has one responsibility: make the cluster match Git, and keep it that way.
+
+This separation is what makes the model clean. You think, Git records, the controller enforces.
+
+## GitOps workflows in practice
+
+You now know what the controller does — and what it doesn't. So where does the rest of the work happen? Let's zoom out and see how the full workflow fits together.
 
 ![GitOps Workflow Diagram](assets/images/GitOps-Loop.png)
 
-### The Two-Repository Pattern
+### The two-repository pattern
 
-In GitOps, we usually split work into two repos:
+In GitOps, work is typically split across two repositories:
 
-1. **Application repo** – Your source code, tests, and Dockerfiles.
-2. **Configuration repo** – Your Kubernetes manifests, Helm charts, or Kustomize configs.
+1. **Application repo** — your source code, tests, and Dockerfiles. This is where developers build.
+2. **Configuration repo** — your Kubernetes manifests, Helm charts, or Kustomize configs. This is what the controller watches.
 
-Why split them?
-It keeps code changes and deployment settings independent. Developers focus on building and testing code. Platform teams focus on how and where it runs. Each can evolve separately, with its own review and approval process.
+Why split them? Because code changes and deployment configuration have different lifecycles. A developer shipping a new feature shouldn't need to touch infrastructure config. A platform engineer tuning resource limits shouldn't need to rebuild the application. Each repo has its own review process, its own history, and its own pace.
 
-### From Commit to Cluster
+### From commit to cluster
 
-Here’s what it looks like in motion:
-You push code to the **application repo**.
-CI picks it up, builds and tests it, creates a container image, and pushes that image to a registry.
-Then - and this is the only deployment step CI does - it updates the **config repo** with the new image tag.
+Here's how a change flows through the system:
 
-The GitOps controller, always watching the config repo, spots the change. It pulls the new config, applies it to the cluster, and if anything drifts later, it quietly puts things back in place.
+You push code to the **application repo**. CI picks it up — builds the code, runs the tests, creates a container image, and pushes that image to a registry. Then CI does one more thing: it updates the **configuration repo** with the new image tag.
 
-### The Key Shift
+That's where CI's job ends.
 
-Notice what never happens?
-The CI pipeline never talks to your cluster. No API tokens floating around in external systems. No one-off manual kubectl commands.
+The controller, watching the configuration repo, picks up the change on its next cycle. It compares, finds the new image tag, and reconciles the cluster to match. The loop handles the rest.
 
-The cluster follows what’s in Git, and only what’s in Git. That’s not just cleaner - it’s more secure, more auditable, and more reliable. If you want to change something, you change Git. If you want to undo something, you revert Git.
+### The key shift
 
-## GitOps vs Traditional CI/CD
+Notice what never happens in this flow: the CI pipeline never talks to your cluster. It has no credentials, no API access, no direct connection. It writes to Git, and that's it.
 
-You’ve seen how GitOps works inside a team’s workflow. But how does it stack up against the way most teams deploy today? Let’s put them side by side.
+The cluster only trusts one source — the configuration repo. Everything else is outside the wall.
 
-<img src="assets/images/CI-CD-vs-GitOps-Comparison.png" width="50%" alt="CI/CD vs GitOps comic">
-![Push vs Pull comic](assets/images/Pull-vs-Push-Model.png)
+This is the "front door" principle. In a traditional push model, CI has a side door straight into your cluster — anyone with pipeline credentials can deploy. In GitOps, there's only the front door: Git. Every change is visible, reviewable, and reversible before it ever reaches the cluster.
 
-The difference comes down to who makes the change, and how it gets into your cluster.
+## Where GitOps fits alongside CI
 
-### Push vs Pull at a Glance
+If you're wondering whether GitOps replaces your CI pipeline — it doesn't. It replaces the part that comes after.
 
-| Aspect              | Traditional CI/CD                         | GitOps                                      |
-| ------------------- | ----------------------------------------- | ------------------------------------------- |
-| **Who deploys**     | CI pipeline pushes to cluster             | Controller inside cluster pulls from Git    |
-| **Access model**    | External systems need cluster credentials | Only the in-cluster controller needs access |
-| **When it happens** | On demand when the pipeline runs          | Continuously, on a short, regular cycle     |
-| **Drift handling**  | Manual intervention required              | Automatically detected and fixed            |
-| **Rollback**        | Re-run pipeline with an old version       | `git revert` and commit                     |
-| **Audit trail**     | Spread across CI logs                     | All in Git history                          |
-| **Source of truth** | Could be CI, could be the cluster         | Always Git                                  |
+Most teams today run a pipeline that does everything: build the code, run the tests, scan the image, and then deploy it to the cluster. GitOps draws a line through that sequence. Everything before the line stays. Everything after it changes.
 
-### Why the Pull Model Changes the Game
+<img src="assets/images/CI-CD-vs-GitOps-Comparison.png" width="50%" alt="CI/CD vs GitOps comparison comic — CI/CD pushes changes to the cluster, GitOps lets the cluster pull from Git.">
 
-Security is one of the biggest wins.
+**CI builds and validates.** It compiles your code, runs your test suite, scans for vulnerabilities, builds the container image, pushes it to a registry, and updates the configuration repo with the new image tag.
 
-In the push model:
+**GitOps deploys and enforces.** The controller picks up the change from the configuration repo, reconciles the cluster, and keeps it aligned from that point forward.
 
-* Anyone with CI credentials can make direct changes to your cluster.
-* Those changes might leave minimal traces outside the CI system.
-* Finding them later means digging through multiple systems.
+They meet at one point: **the configuration repo.** That's the handoff. CI writes to it. The controller reads from it. Neither crosses into the other's territory.
 
-In the pull model:
+Here's what that boundary looks like in practice:
 
-* Every change must go through Git.
-* That means commits, branches, and file changes - all logged, reviewable, and easy to trace.
-* Rolling back is as simple as reverting a commit.
+| Responsibility | CI | GitOps controller |
+| --- | --- | --- |
+| Build and compile code | ✓ | |
+| Run tests | ✓ | |
+| Scan images for vulnerabilities | ✓ | |
+| Push image to registry | ✓ | |
+| Update config repo with new tag | ✓ | |
+| Detect config changes | | ✓ |
+| Apply changes to cluster | | ✓ |
+| Correct drift | | ✓ |
+| Maintain continuous reconciliation | | ✓ |
 
-Push model = a quiet side door.
-Pull model = the front door, where everyone sees who’s coming and going.
+Notice there's no overlap. That's by design. CI has no credentials to the cluster. The controller has no role in building or testing. Each system does one job well, and the config repo is the contract between them.
 
-### What This Means Day to Day
+This is why GitOps doesn't ask you to throw out your existing pipeline. It asks you to stop it one step earlier — before it touches the cluster — and let the controller handle the rest.
 
-**Traditional CI/CD**: You run a pipeline and hope it finishes cleanly. Maybe the cluster updated. Maybe someone changed something in between.
+## The four principles — named
 
-**GitOps**: If it’s in Git, it’s in the cluster. If someone changes the cluster by hand, it’s corrected automatically in the next reconciliation cycle.
+Everything you've seen today has a formal name. The CNCF's [OpenGitOps project](https://opengitops.dev) distilled the patterns that teams like Weaveworks, Flux, and Argo CD had been practising into four core principles. You've already seen each one in action — here's what the community calls them.
 
-With GitOps, deployments aren’t one-off events. They’re a state your system actively maintains - secure, auditable, and resistant to drift.
+**1. Declarative**
+You describe the end state, not the steps to get there. When you wrote `replicas: 3`, you didn't tell Kubernetes *how* to create three pods — you told it *what you wanted*. The system figured out the rest.
 
-## The Four Principles That Make GitOps Work
+**2. Versioned and immutable**
+Every change lives in Git — committed, reviewed, and reversible. When we said "if you want to undo a bad change, you revert the commit," that's this principle at work. Git is the single source of truth, and its history can't be quietly rewritten.
 
-Everything you’ve seen today - the self-healing, the security, the simplicity - comes down to four core ideas. They’re not mine, and they’re not specific to Flux. The CNCF’s [OpenGitOps](https://opengitops.dev) project pulled these patterns from real-world teams and wrote them down so everyone is speaking the same language.
+**3. Pulled automatically**
+The cluster fetches its own configuration from Git. Nothing pushes in from the outside. This is the direction reversal you saw in section three — and the reason CI never needs credentials to your cluster.
 
-Here they are, plain and simple:
+**4. Continuously reconciled**
+The loop doesn't stop. Watch, compare, reconcile — on every cycle, the controller checks for drift and corrects it. This is the heartbeat that makes self-healing possible.
 
-1. **Declarative** - Describe the end state you want, not the steps to get there. For example, `replicas: 3` instead of running `kubectl scale`.
-2. **Versioned & Immutable** - Keep the desired state in Git, so every change is tracked, reviewed, and reversible.
-3. **Pulled Automatically** - The cluster fetches its own configuration from Git - you never push changes into it.
-4. **Continuously Reconciled** - The system keeps reality matched to Git and fixes drift whenever it appears.
+<img src="assets/images/The-Four-GitOps-Principles.png" width="50%" alt="The four GitOps principles illustrated — Declarative, Versioned and Immutable, Pulled Automatically, Continuously Reconciled.">
 
-If someone tells you they “do GitOps,” these are the four things you should be able to see in action. And when you use Flux, Argo CD, or other GitOps tools, this is exactly what they’re implementing for you.
+If someone tells you they "do GitOps," these are the four things you should be able to see in action. If a tool claims to be GitOps-compliant, these are the four boxes it needs to tick. And if you're ever evaluating an approach and something feels off, check it against these — the gap will usually point you to which principle is missing.
 
-<img src="assets/images/The-Four-GitOps-Principles.png" width="50%" alt="The Four GitOps Principles">
+## What's next — on to Day 2
 
-## GitOps in Context: Your Journey Forward
+At this point you might be thinking: this all sounds great, but how much setup pain am I signing up for?
 
-### From Drift to Control
+Less than you'd expect.
 
-We began today with a simple truth: what’s in Git often drifts from what’s running in your cluster. Quick fixes, manual changes, and ad-hoc scripts make it worse.
+In Day 2, you'll take everything from today's mental model and make it real — on your laptop, with no cloud accounts and no complex infrastructure. Here's what you'll do:
 
-Now you’ve seen the alternative — a model where Git is the single source of truth, and your cluster keeps itself aligned with it.
+- **Spin up** a local Kubernetes cluster using kind.
+- **Install Flux** and point it at a Git repository.
+- **Deploy an app** by committing a manifest — no `kubectl apply`.
+- **Break something on purpose** — and watch the reconciliation loop put it back.
 
-By the end of this first session, you can:
+By the end, you'll have a working self-healing system running locally. The loop you've been reading about will be running in front of you.
 
-* Explain the GitOps loop: **watch → compare → reconcile**
-* Show why **pull beats push** for security and reliability
-* Identify the four CNCF-endorsed principles that make self-healing possible
-
-### Tomorrow: From Knowledge to Power
-
-Tomorrow we go from concept to action. In the next hour you will:
-
-* **Build** a local Kubernetes cluster
-* **Install** Flux and watch it take control
-* **Deploy** an app using only Git commits
-* **Break** something on purpose — and watch it heal itself
-
-No cloud accounts. No complex setup. Just your laptop and the full GitOps loop in action.
-
-And here’s the real win: with GitOps, drift isn’t something you scramble to detect - it’s something that simply can’t persist. Your clusters will sync themselves, your audit trail will live in Git, and your role will shift from firefighting to guiding intent.
-
-By Day 5, you’ll be confident running GitOps in production - with the peace of mind that comes from knowing your system is always in the state you declared.
-
-**Ready to build your first self-healing system?**
-[Continue to Day 2 →](https://github.com/ahmedmuhi/GitOps-Days/blob/main/Day-2-Building-Your-First-Self-Healing-System.md)
+**Ready to build it?** [Continue to Day 2 →](./Day-2-Building-Your-First-Self-Healing-System.md)
