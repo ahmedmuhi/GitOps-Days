@@ -1,7 +1,6 @@
 # GitOps-Days 🔄🚀
 
-Your cluster broke. Git fixed it.
-*A hands-on series that takes you from zero GitOps to a self-healing Kubernetes setup — starting local, finishing in the cloud.*
+Learn GitOps by building it, one day at a time. Each day you build something and watch how it behaves.
 
 ## Who is this for?
 
