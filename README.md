@@ -20,7 +20,7 @@ By the end of this series you won't just know what GitOps is — you'll have bui
 
 ## Start here — pick your path
 
-> Three days available now. More on the way — see [What's next](#whats-next).
+> Four days available now. More on the way — see [What's next](#whats-next).
 
 There's more than one way into GitOps. Pick the entry point that fits how you learn best.
 
@@ -31,7 +31,10 @@ Start with [Day 1: What really is GitOps?](./Day-1-What-really-is-GitOps.md) —
 Jump to [Day 2: Building Your First Self-Healing System](./Day-2-Building-Your-First-Self-Healing-System.md) — spin up a local cluster, install Flux, and watch it heal itself in real time.
 
 ☁️ **I'm ready for cloud-scale**
-Head to [Day 3: Production GitOps on AKS with GitHub Actions](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) — take the same loop to Azure Kubernetes Service with CI and production structure.
+Head to [Day 3: GitOps on AKS — Same Loop, Bigger Stage](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) — take the same loop to Azure Kubernetes Service with production structure.
+
+🏭 **I want the full production picture**
+Finish with [Day 4: Production GitOps Patterns — Closing the Loop](./Day-4-Production-GitOps-Patterns.md) — build a GitHub Actions pipeline that feeds the loop, then handle multiple environments and secrets.
 
 > **Prerequisites vary by day** — each guide lists exactly what you need at the top. In general: Git, Docker, and `kubectl` for local labs; add the Azure CLI for Day 3.
 
@@ -82,10 +85,7 @@ Good news: this is exactly what self-healing is for. Flux's reconciliation loop 
 
 ## 🗺️ What's next
 
-Days 1–3 are live. Here's where the series is heading:
-
-- **Day 4** — CI pipelines that feed the loop, image promotion, rollout gates
-- **Day 5** — Multi-environment layouts and secrets patterns
+Days 1–4 are live. More days are on the way.
 
 Have a topic you'd like covered? [Vote or suggest in the issues](https://github.com/ahmedmuhi/GitOps-Days/issues).
 
