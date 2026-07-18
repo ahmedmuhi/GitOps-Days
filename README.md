@@ -1,39 +1,31 @@
-# GitOps-Days 🔄🚀
+# GitOps-Days
 
-Your cluster broke. Git fixed it.
-*A hands-on series that takes you from zero GitOps to a self-healing Kubernetes setup — starting local, finishing in the cloud.*
+Learn GitOps by building it, one day at a time. Each day you build something and watch how it behaves.
 
-## Who is this for?
+<p align="center">
+  <img src="./assets/images/gitops-reconciliation-loop.png" width="70%" alt="The GitOps reconciliation loop: Git stores the desired state, the cluster runs the actual state, and a controller reconciles the cluster whenever the two differ — whether from a commit or from drift.">
+</p>
 
-You know your way around Kubernetes — pods, deployments, `kubectl` — but you're still pushing changes by hand and hoping nothing drifts overnight. Maybe you've heard of Flux or Argo CD but haven't built a reconciliation loop end to end.
+## What you'll build
 
-This series is for you. No GitOps experience needed — just curiosity and a terminal.
+Over the series you'll build a GitOps setup from nothing: a cluster that pulls its configuration from Git, notices when reality stops matching the repo, and puts itself back. You start on your laptop and finish on a cloud cluster, with every change along the way made through Git.
 
-## What you'll walk away with
+You'll get the most from this if you're comfortable with basic Kubernetes — you can apply a manifest and know roughly what a pod and a deployment are. If Kubernetes itself is new, start with the official [Kubernetes tutorials](https://kubernetes.io/docs/tutorials/) first and come back; if you already run Flux or Argo in production, the early days will feel familiar and you may want to skim to the later ones.
 
-By the end of this series you won't just know what GitOps is — you'll have built it, broken it, and watched it fix itself.
+## Start here
 
-- **Understand why clusters drift** — and set up a system that makes drift correct itself before you even notice.
-- **Build a self-healing loop on your laptop** — a local Flux-powered reconciliation cycle you can experiment with safely.
-- **Take that same loop to Azure Kubernetes Service** — with production patterns, CI integration, and real-world structure.
-- **Roll back with confidence** — because every change lives in Git, recovery is a revert, not a firefight.
+New here? Start with [Day 1](./Day-1-What-really-is-GitOps.md) and go in order — each day builds on the one before.
 
-## Start here — pick your path
+| | Day | What you'll do |
+|---|---|---|
+| 🧠 | [Day 1 – What really is GitOps?](./Day-1-What-really-is-GitOps.md) | Build the mental model: desired state, drift, reconciliation. |
+| 🛠️ | [Day 2 – Building Your First Self-Healing System](./Day-2-Building-Your-First-Self-Healing-System.md) | Build it locally: a kind cluster that repairs itself when you break it. |
+| ☁️ | [Day 3 – GitOps on AKS: Same Loop, Bigger Stage](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) | Take it to the cloud: the same loop, production-grade, on Azure. |
+| 🏭 | [Day 4 – Production GitOps Patterns: Closing the Loop](./Day-4-Production-GitOps-Patterns.md) | Close the loop: a CI pipeline that feeds Git, and the repo patterns teams scale with. |
 
-> Three days available now. More on the way — see [What's next](#whats-next).
+The series is ongoing — new days are added as they're written.
 
-There's more than one way into GitOps. Pick the entry point that fits how you learn best.
-
-🧠 **I want to understand first**
-Start with [Day 1: What really is GitOps?](./Day-1-What-really-is-GitOps.md) — build a clear mental model of desired state, drift, and reconciliation before touching a terminal.
-
-🛠️ **I learn by doing**
-Jump to [Day 2: Building Your First Self-Healing System](./Day-2-Building-Your-First-Self-Healing-System.md) — spin up a local cluster, install Flux, and watch it heal itself in real time.
-
-☁️ **I'm ready for cloud-scale**
-Head to [Day 3: Production GitOps on AKS with GitHub Actions](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) — take the same loop to Azure Kubernetes Service with CI and production structure.
-
-> **Prerequisites vary by day** — each guide lists exactly what you need at the top. In general: Git, Docker, and `kubectl` for local labs; add the Azure CLI for Day 3.
+Comfortable with Kubernetes already and just want to see it work? [Day 2](./Day-2-Building-Your-First-Self-Healing-System.md) stands on its own. Ready for cloud from the start? [Day 3](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) does too.
 
 <details><summary>New to GitOps terminology?</summary>
 
@@ -48,7 +40,7 @@ Day 1 covers these in depth.
 
 </details>
 
-## 🔄 Stay up to date (sync your fork)
+## Staying up to date
 
 **Using GitHub (no local clone):**
 
@@ -69,7 +61,7 @@ git push origin main
 
 </details>
 
-## ❓ FAQ
+## FAQ
 
 **Do I need to re-fork to get updates?**
 No — use the sync steps above.
@@ -80,16 +72,13 @@ Good news: this is exactly what self-healing is for. Flux's reconciliation loop 
 **I have a question that's not listed here.**
 [Open an issue](https://github.com/ahmedmuhi/GitOps-Days/issues) — we'll add it to the FAQ.
 
-## 🗺️ What's next
+## What's next
 
-Days 1–3 are live. Here's where the series is heading:
-
-- **Day 4** — CI pipelines that feed the loop, image promotion, rollout gates
-- **Day 5** — Multi-environment layouts and secrets patterns
+Days 1–4 are live. More days are on the way.
 
 Have a topic you'd like covered? [Vote or suggest in the issues](https://github.com/ahmedmuhi/GitOps-Days/issues).
 
-## 💬 Join the conversation
+## Join the conversation
 
 GitOps-Days is evolving, and your feedback shapes what comes next.
 
@@ -97,12 +86,12 @@ GitOps-Days is evolving, and your feedback shapes what comes next.
 - Have ideas or improvements? Send a pull request
 - Sharing your journey? Post with `#GitOpsDays`
 
-## 📚 Additional resources
+## Additional resources
 
 - [Flux documentation](https://fluxcd.io/flux/)
 - [OpenGitOps / CNCF GitOps Working Group](https://opengitops.dev/)
 - [Kubernetes tutorials](https://kubernetes.io/docs/tutorials/)
 
-## ✍️ About the author
+## About the author
 
 Built by [Ahmed Muhi](https://github.com/ahmedmuhi), Microsoft Azure MVP and cloud migration architect with 20+ years in IT. Principal Consultant at LAB³, specialising in Azure migrations, solution architecture, and Infrastructure as Code.
