@@ -56,42 +56,46 @@ The controller does not decide whether three replicas or five replicas is the ri
 
 Everything else in GitOps follows from that question.
 
-## What the controller changes
+## Meet the GitOps controller
 
-Most teams already keep their manifests in Git. If that alone were enough, drift wouldn't persist — the repo in our story said `replicas: 3` the whole time. The record was fine. What was missing was enforcement.
+GitOps adds the missing component in our story: a controller.
 
-Adding a controller — software running inside the cluster, watching Git and acting on what it finds — changes four things at once.
+A GitOps controller is software that runs in or alongside the Kubernetes environment and keeps the configuration stored in the cluster aligned with the desired state recorded in Git. Flux and Argo CD are two common implementations. They differ in how they are installed, configured, and operated, but they perform the same essential role: they watch Git and reconcile the cluster when its configuration no longer matches.
 
-**Authority** moves from whoever last touched the cluster to the desired state recorded in Git. You still decide what should run, through commits and reviews. The controller enforces that decision every cycle, without forgetting.
+The controller does not decide what the system should look like. People still make that decision through commits, pull requests, and reviews. Nor does it build the application or run its tests. Its responsibility begins once the desired state has been recorded in Git.
 
-**Direction** reverses. Instead of a deployment pipeline pushing changes into the cluster, the controller pulls the desired state from Git. CI no longer needs deployment credentials for the cluster.
+From that point on, it keeps asking the question we ended with:
 
-**Timing** becomes continuous. Reconciliation is no longer tied to deployment events. The controller checks on a regular cycle, so drift is corrected before it can quietly accumulate.
+**Does the cluster still match Git?**
 
-**Evidence** becomes durable. Every change meant to persist flows through Git — commits, branches, reviews. Direct cluster changes can still happen, but there's only one path for a change to become authoritative: Git.
+The controller answers that question through a continuous reconciliation loop.
 
-Here's what those four shifts add up to in practice — our incident again, this time with a controller running and automatic self-healing in place:
+<p align="center">
+  <img
+    src="./assets/images/gitops-reconciliation-loop.png"
+    width="80%"
+    alt="The GitOps reconciliation loop, with Git holding the desired state, Kubernetes holding the cluster configuration, and a controller continuously watching, comparing, and reconciling the two.">
+</p>
 
-<p align="center"><img src="./assets/images/gitops-corrects-drift.png" width="80%" alt="GitOps corrects configuration drift: Git declares replicas: 3, a manual kubectl scale sets the cluster to 5, and the controller reconciles the cluster back to 3."></p>
+The diagram shows the complete relationship. Git holds the desired state that the team has reviewed and approved. Kubernetes holds the corresponding objects currently recorded in the cluster. The controller sits between them and repeatedly gathers both versions, compares them, and acts whenever they differ.
 
-The manual scale to 5 still works in the moment. GitOps changes not whether Kubernetes accepts the command, but whether that change is allowed to become the lasting truth.
+That routine has three parts: **watch, compare, and reconcile**.
 
-On the controller's next pass, it compares: Git says 3, the cluster says 5. It sets the cluster back to 3 — no argument, no meeting; the disagreement was resolved by a comparison, not a conversation. And if 5 turns out to be the right number after all? The caption on the diagram is the entire procedure: commit it. The emergency change becomes a one-line PR, reviewed and recorded, and from then on the controller defends 5 instead.
+During **watch**, the controller reads the desired configuration from Git and the corresponding objects from Kubernetes. During **compare**, it determines whether those two descriptions still agree. During **reconcile**, it applies the declared configuration when they do not.
 
-That's the line between the two worlds:
+Then it checks again.
 
-YAML in Git without a controller is a **record**.
-YAML in Git *with* a controller is a **system**.
+The loop continues whether anyone is actively deploying or not. Most cycles find that Git and the cluster already agree, in which case the controller makes no change. When a difference appears, the same routine is what detects and corrects it.
+
+The diagram gives us the whole mechanism at once. Now slow it down and follow one cycle from beginning to end.
 
 ## The loop, one cycle at a time
 
-You've already seen the loop correct drift: the controller detected that someone had manually scaled the service, noticed the cluster no longer matched Git, and brought the cluster back into alignment. Now let's slow the loop down and watch a complete cycle unfold — because the same machinery that fixes drift is also the machinery that deploys everything in a GitOps system. Deployment and drift correction are not separate capabilities. They are the same reconciliation process, responding to different causes of change.
+The opening left Git declaring three replicas while the cluster was running five. With the controller now running, that gap closes on its next pass: Git holds the decision, so the cluster returns to three. But the team still thinks five was the right call, and that is where a full cycle becomes worth following.
 
-Pick up the story where we left it. The emergency scale was correct: five replicas really is what the service needs. So the team captures that decision properly — someone opens a pull request with the one-line change, a teammate reviews it, and the change is merged. Git now says `replicas: 5`. But the cluster is still running 3. Why? Because the controller already corrected the manual change: when someone scaled the cluster directly, the controller saw that Git still declared 3 and restored the cluster to match.
+So they capture the decision properly. Someone opens a pull request with the one-line change, a teammate reviews it, and it is merged. Git now says `replicas: 5`, while the cluster is still running 3.
 
 Now notice what has happened. The two states disagree again — but this time the direction of change is reversed. Previously, the cluster changed and Git stayed the same. Now Git changed and the cluster stayed the same: the desired state has moved, and the cluster hasn't caught up with it. The disagreement looks different, but to the controller it is exactly the same problem — desired ≠ actual — and it is about to respond through the three-part routine at the heart of the reconciliation loop: watch, compare, reconcile.
-
-<p align="center"><img src="./assets/images/gitops-reconciliation-loop.png" width="80%" alt="The GitOps reconciliation loop: Git stores the desired state, the cluster runs the actual state, and a controller reconciles the cluster whenever the two differ — whether from a commit or from drift."></p>
 
 **Watch — gather both sides of reality.** The controller begins by collecting two snapshots. From Git, it reads the desired state: `replicas: 5`. This is what the system *should* look like. From the cluster, it reads the Deployment as currently recorded: `replicas: 3` — the actual state, as far as the controller can see. Nobody manually triggered this check — the reconciliation cycle was going to happen anyway. The merge didn't start the loop; it simply created a difference for the next cycle to discover. The controller now holds both sides of the picture: desired 5, actual 3.
 
