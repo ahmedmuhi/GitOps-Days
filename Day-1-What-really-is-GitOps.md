@@ -1,12 +1,10 @@
-# Day 1 – What really is GitOps?
+# Day 1: What really is GitOps?
 
 ## Life before GitOps
 
 If you've run Kubernetes for any length of time, you've probably seen some version of this story.
 
-A team runs an application in Kubernetes. The deployment configuration is stored in Git, where changes can be reviewed, tracked, and rolled back.
-
-The configuration says:
+A team runs an application in Kubernetes, with its deployment configuration stored in Git so changes can be reviewed, tracked, and rolled back. At the moment, that configuration declares three replicas:
 
 ```yaml
 replicas: 3
@@ -14,7 +12,7 @@ replicas: 3
 
 Then an incident happens.
 
-Traffic increases unexpectedly, and the application starts struggling. Someone on the team investigates and makes a quick operational decision to scale the deployment to five replicas.
+Traffic increases unexpectedly, and the application starts struggling. Someone on the team investigates and makes a quick operational decision to scale the Deployment to five replicas.
 
 ```bash
 kubectl scale deployment app --replicas=5
@@ -47,6 +45,7 @@ Instead of treating Git as a record that humans occasionally consult, GitOps tre
 
 **Store the desired state of the system in Git, and run a controller that continuously compares that desired state with the cluster and reconciles any difference.**
 
+> [!IMPORTANT]
 > If it's not in Git, it shouldn't exist in the cluster.
 >
 > If it's in Git, the cluster should eventually match it.
