@@ -1,46 +1,61 @@
 # Day 1 – What really is GitOps?
 
-> **No tools needed today.** This is all mental model — by the end, you'll be able to predict what a GitOps controller does before you've ever touched one.
+## Life before GitOps
 
-By the end of this session, you'll be able to:
+If you've run Kubernetes for any length of time, you've probably seen some version of this story.
 
-- State GitOps in one clear sentence.
-- Trace the reconciliation loop — watch, compare, reconcile — and explain what happens at each step.
-- Explain where the GitOps controller's job ends, and what Kubernetes and CI handle instead.
-- Name the four CNCF principles and recognise them in action.
+A team runs an application in Kubernetes. The deployment configuration is stored in Git, where changes can be reviewed, tracked, and rolled back.
 
-## The problem GitOps solves
+The configuration says:
 
-If you've run Kubernetes for any length of time, you've lived some version of this story.
+```yaml
+replicas: 3
+```
 
-Your deployment manifests live in a Git repo, because that's good practice. The repo says `replicas: 3`. Meanwhile, at some point during last week's traffic spike, someone on the team ran `kubectl scale deployment app --replicas=5` — a perfectly reasonable thing to do mid-incident. It worked. Everyone moved on.
+Then an incident happens.
 
-Now look at the picture your team is left with:
+Traffic increases unexpectedly, and the application starts struggling. Someone on the team investigates and makes a quick operational decision to scale the deployment to five replicas.
 
-<p align="center"><img src="./assets/images/life-before-gitops.png" width="80%" alt="Life before GitOps: a developer commits replicas: 3 to the config repo while an operator scales the cluster to 5 directly. Nothing compares the two."></p>
+```bash
+kubectl scale deployment app --replicas=5
+```
 
-The repo says one thing. The cluster says another. Nothing compares them — and neither change is wrong. The developer followed the process. The operator fixed a real problem. That's what makes this failure mode so common: it isn't caused by mistakes. It's caused by having two places where truth can live and no mechanism that reconciles them.
+The service stabilises. The immediate problem is solved.
 
-So configuration drifts. Quietly, one reasonable change at a time, until the repo is a well-organised work of fiction and the only way to know what's actually running is to go look.
+**But the team has created a gap.**
 
-Teams have tried to close this gap by keeping configuration in Git, adding deployment scripts, and running a CI pipeline on every commit. Each one helps, but they share the same blind spot: they act at deploy time. Between deployments, where real life happens, changes made directly to the cluster go unrecorded and uncorrected.
+<p align="center">
+  <img
+    src="./assets/images/life-before-gitops-configuration-drift.png"
+    width="80%"
+    alt="Life before GitOps showing Git declaring three replicas, the Kubernetes cluster running five replicas, and no reconciliation mechanism keeping them aligned.">
+</p>
 
-In 2017, engineers at Weaveworks proposed a different operating model and gave it a name: GitOps.
+Git still says `replicas: 3`, while the cluster is now running `replicas: 5`.
 
-**Store the desired state of your system in Git, and run a controller in the cluster that continuously pulls that state, compares it with what is actually running, and reconciles any difference.**
+Nothing about this situation is unusual. The original configuration was correct when it was committed, and the operational change was equally correct when it was made. The problem is that the two now describe different versions of the same system. Git describes what the team intends the system to look like, while the cluster reflects what it currently looks like. Nobody is continuously comparing the two.
+
+This is configuration drift.
+
+It rarely happens because people ignore good practices. More often, it happens because production systems change between deployments. An emergency fix is made, a setting is adjusted while troubleshooting, or a temporary workaround quietly becomes permanent. Over time, Git and the cluster drift apart because nothing is continuously checking whether they still agree.
+
+Teams have tried to close this gap by storing configuration in Git, writing deployment scripts, and building CI pipelines that automatically apply changes. Each of those practices improves software delivery, but they all share the same blind spot: they act when a deployment happens. Between deployments, where real life happens, the cluster can continue changing while Git stands still.
+
+In 2017, engineers at Weaveworks proposed a different operating model and gave it a name: **GitOps**.
+
+Instead of treating Git as a record that humans occasionally consult, GitOps treats Git as the source of truth that the system continuously enforces.
+
+**Store the desired state of the system in Git, and run a controller that continuously compares that desired state with the cluster and reconciles any difference.**
 
 > If it's not in Git, it shouldn't exist in the cluster.
-> If it's in Git, the cluster should match it.
+>
+> If it's in Git, the cluster should eventually match it.
 
-The controller doesn't decide whether three or five is the better number. It makes Git the place where that decision must be recorded.
+The controller does not decide whether three replicas or five replicas is the right answer. That decision still belongs to people. What changes is that there is now a mechanism continuously asking one question:
 
-Look at the diagram again. The question mark in the middle represents the missing mechanism. GitOps fills that space with a controller. And that controller runs a loop worth naming now, because this entire series is built on it:
+**Does the cluster still match Git?**
 
-**Watch → Compare → Reconcile.**
-
-Watch the desired state in Git and the actual state in the cluster. Compare them. Reconcile the cluster whenever they differ. Then repeat, continuously — every few seconds or minutes, not only when someone deploys.
-
-By the end of today, you'll be able to predict what the controller will do when Git changes, when the cluster drifts, and when the two disagree in ways you didn't expect.
+Everything else in GitOps follows from that question.
 
 ## What the controller changes
 
@@ -75,7 +90,7 @@ You've already seen the loop correct drift: the controller detected that someone
 
 Pick up the story where we left it. The emergency scale was correct: five replicas really is what the service needs. So the team captures that decision properly — someone opens a pull request with the one-line change, a teammate reviews it, and the change is merged. Git now says `replicas: 5`. But the cluster is still running 3. Why? Because the controller already corrected the manual change: when someone scaled the cluster directly, the controller saw that Git still declared 3 and restored the cluster to match.
 
-Now notice what has happened. The two states disagree again — but this time the direction of change is reversed. Previously, the cluster changed and Git stayed the same. Now Git changed and the cluster stayed the same: the desired state has moved, and the cluster hasn't caught up with it. The disagreement looks different, but to the controller it is exactly the same problem — desired ≠ actual — and it is about to respond using the same three-step routine we introduced at the beginning: watch, compare, reconcile.
+Now notice what has happened. The two states disagree again — but this time the direction of change is reversed. Previously, the cluster changed and Git stayed the same. Now Git changed and the cluster stayed the same: the desired state has moved, and the cluster hasn't caught up with it. The disagreement looks different, but to the controller it is exactly the same problem — desired ≠ actual — and it is about to respond through the three-part routine at the heart of the reconciliation loop: watch, compare, reconcile.
 
 <p align="center"><img src="./assets/images/gitops-reconciliation-loop.png" width="80%" alt="The GitOps reconciliation loop: Git stores the desired state, the cluster runs the actual state, and a controller reconciles the cluster whenever the two differ — whether from a commit or from drift."></p>
 
@@ -87,7 +102,7 @@ Now notice what has happened. The two states disagree again — but this time th
 
 **Deployment and drift correction are the same thing.** This is the key idea. A deployment is reconciliation. Drift correction is reconciliation. The controller doesn't have separate logic for "a developer merged a feature," "someone changed the cluster manually," "a rollback was requested," or "an incident fix was committed." All of these become the same question: does the live system match the declared system? If yes, nothing happens. If no, the controller changes reality until they match.
 
-**The loop continues.** After the replicas are updated, the next cycle begins. The controller checks again: desired 5, actual 5. The states match, so the controller makes no change — and that nothing is not inactivity, it's verification. The controller is continuously confirming that the system remains aligned. In a healthy GitOps environment, most reconciliation cycles end this way: watch → compare → desired = actual → no change required. The loop is not a deployment event that runs only when someone pushes code. It's a continuous heartbeat that keeps asking: does reality still match the declaration?
+**The loop continues.** After the replicas are updated, the next cycle begins. The controller checks again: desired 5, actual 5. The states match, so the controller makes no change — and that nothing is not inactivity, it's verification. The controller is continuously confirming that the system remains aligned. In a healthy GitOps environment, most cycles end with the controller watching both states, finding that desired and actual already match, and making no change. The loop is not a deployment event that runs only when someone pushes code. It's a continuous heartbeat that keeps asking: does reality still match the declaration?
 
 Here's the sentence that makes the entire model predictable, and it's worth reading twice:
 
@@ -276,7 +291,7 @@ That's the mental model. Look at what you can now do with it.
 
 Someone scales a Deployment by hand — you know it comes back, and why. A node dies at 2 AM — you know the GitOps controller sleeps through it, and which loop wakes instead. Someone deletes a namespace — you know both loops fire, in order. A pipeline pushes a new image tag — you know it's the same reconciliation as everything else, just with a different author.
 
-That's the promise the opening made: predicting what the controller does before you've ever touched one.
+That is the mental model you have built: you can now predict what the controller will do before you have ever used one.
 
 Tomorrow you find out whether you were right.
 
