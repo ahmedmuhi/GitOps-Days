@@ -85,17 +85,98 @@ During **watch**, the controller reads the desired configuration from Git and th
 
 Then it checks again.
 
-The loop continues whether anyone is actively deploying or not. Most cycles find that Git and the cluster already agree, in which case the controller makes no change. When a difference appears, the same routine is what detects and corrects it.
+The loop continues whether anyone is actively deploying or not. Most cycles find that Git and the cluster already agree, so the controller makes no change at all.
 
-The diagram gives us the whole mechanism at once. Now slow it down and follow one cycle from beginning to end.
+Eventually, though, the answer is different.
+
+Git and the cluster disagree.
+
+That is exactly where we left our story.
+
+Let's return to it and see what the controller does first.
+
+## When Git and the cluster disagree
+
+The first time the controller asks whether Git and the cluster still agree, the answer is **no**.
+
+Git still declares:
+
+```yaml
+replicas: 3
+```
+
+The cluster is still running:
+
+```yaml
+replicas: 5
+```
+
+Nothing has changed since we left the story.
+
+The difference is that someone is now watching.
+
+<p align="center">
+  <img
+    src="./assets/images/gitops-corrects-drift.png"
+    width="80%"
+    alt="The GitOps controller detects configuration drift and reconciles the cluster back to the state declared in Git.">
+</p>
+
+The controller compares the two states and reaches a simple conclusion:
+
+**They do not match.**
+
+That is all it needs to know.
+
+It does not know there was a traffic spike.
+
+It does not know someone ran `kubectl scale`.
+
+It does not know whether the manual change was an emergency fix or an accidental mistake.
+
+It only knows that Git declares three replicas while the cluster declares five.
+
+So it reconciles the difference.
+
+It applies the Deployment stored in Git, and Kubernetes scales the application back to three replicas.
+
+The manual change still achieved its purpose when it was needed.
+
+GitOps changes something different.
+
+It changes whether that manual change is allowed to become the system's long-term truth.
+
+If five replicas really should become the new normal, the solution is not to scale the cluster again.
+
+The solution is to record that decision in Git.
+
+The controller is not protecting three replicas.
+
+It is protecting whatever Git declares.
+
+Today, Git happens to declare three.
+
+Tomorrow it might declare five.
+
+The controller will enforce whichever state Git records.
+
+That is reconciliation from a distance.
+
+Now let's slow it down and follow one complete reconciliation cycle.
 
 ## The loop, one cycle at a time
 
-The opening left Git declaring three replicas while the cluster was running five. With the controller now running, that gap closes on its next pass: Git holds the decision, so the cluster returns to three. But the team still thinks five was the right call, and that is where a full cycle becomes worth following.
+The controller has corrected the original disagreement.
 
-So they capture the decision properly. Someone opens a pull request with the one-line change, a teammate reviews it, and it is merged. Git now says `replicas: 5`, while the cluster is still running 3.
+But the team still believes five replicas was the right decision.
 
-Now notice what has happened. The two states disagree again — but this time the direction of change is reversed. Previously, the cluster changed and Git stayed the same. Now Git changed and the cluster stayed the same: the desired state has moved, and the cluster hasn't caught up with it. The disagreement looks different, but to the controller it is exactly the same problem — desired ≠ actual — and it is about to respond through the three-part routine at the heart of the reconciliation loop: watch, compare, reconcile.
+So they capture that decision properly. Someone opens a pull request with the one-line change, a teammate reviews it, and it is merged.
+
+Git now says `replicas: 5`, while the cluster is still running `replicas: 3`.
+
+Now the disagreement has reversed.
+
+Instead of the cluster changing while Git stayed the same, Git has changed while the cluster has not yet caught up.
 
 **Watch — gather both sides of reality.** The controller begins by collecting two snapshots. From Git, it reads the desired state: `replicas: 5`. This is what the system *should* look like. From the cluster, it reads the Deployment as currently recorded: `replicas: 3` — the actual state, as far as the controller can see. Nobody manually triggered this check — the reconciliation cycle was going to happen anyway. The merge didn't start the loop; it simply created a difference for the next cycle to discover. The controller now holds both sides of the picture: desired 5, actual 3.
 
