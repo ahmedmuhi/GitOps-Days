@@ -18,7 +18,7 @@ New here? Start with [Day 1](./Day-1-What-really-is-GitOps.md) and go in order �
 
 | | Day | What you'll do |
 |---|---|---|
-| 🧠 | [Day 1: What really is GitOps?](./Day-1-What-really-is-GitOps.md) | Build the mental model: desired state, drift, reconciliation. |
+| 🧠 | [Day 1 – What really is GitOps?](./Day-1-What-really-is-GitOps.md) | Build the mental model: desired state, drift, reconciliation. |
 | 🛠️ | [Day 2 – Building Your First Self-Healing System](./Day-2-Building-Your-First-Self-Healing-System.md) | Build it locally: a kind cluster that repairs itself when you break it. |
 | ☁️ | [Day 3 – GitOps on AKS: Same Loop, Bigger Stage](./Day-3-GitOps-on-AKS-Self-Healing-Cloud-Scale.md) | Take it to the cloud: the same loop, production-grade, on Azure. |
 | 🏭 | [Day 4 – Production GitOps Patterns: Closing the Loop](./Day-4-Production-GitOps-Patterns.md) | Close the loop: a CI pipeline that feeds Git, and the repo patterns teams scale with. |
