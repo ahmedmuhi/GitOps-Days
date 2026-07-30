@@ -511,7 +511,7 @@ kubectl get deployment hello -n hello -w
 
 Within thirty seconds, you'll see the replica count climb from 1 to 3:
 
-```
+```text
 NAME    READY   UP-TO-DATE   AVAILABLE   AGE
 hello   1/1     1            1           68s
 hello   1/3     1            1           74s
@@ -522,21 +522,15 @@ hello   3/3     3            3           75s
 
 Press `Ctrl+C` to stop watching.
 
-Think about what just happened. You edited a file, pushed to Git, and walked away. No `kubectl apply`. No pipeline to trigger. The Source Controller picked up your new commit, the Kustomize Controller compared it to the cluster, found that 1 ≠ 3, and reconciled. The loop did exactly what Day 1 said it would.
+You edited a file, pushed it, and walked away. The cluster followed. No `kubectl apply`, no pipeline to trigger, no second step. That's the whole workflow — and it's the one you'll use for the rest of this series.
 
-This is the first half of the GitOps promise: **Git drives the cluster.**
+Git now says three replicas, and the cluster is running three. Remember that number, because someone is about to change it without asking Git.
 
-The second half is what happens when something changes the cluster *without* going through Git. Let's test that next.
+## Break it by hand
 
-## Break things on purpose
+You've proved that Git drives the cluster. Now let's prove the other half — what happens when someone changes the cluster without going through Git.
 
-You've proved that Git drives the cluster. Now let's prove the other half: **the cluster resists changes that don't come from Git.**
-
-We'll run two experiments. Both simulate real-world mistakes — and both end the same way.
-
-### Experiment 1: The emergency scale
-
-**The scenario:** A teammate is mid-incident. Under pressure, they bypass Git and scale the app directly:
+Scale the Deployment directly, the way the operator did in Day 1's story:
 
 ```shell
 kubectl scale deployment hello -n hello --replicas=5
@@ -548,99 +542,124 @@ Watch what happens:
 kubectl get deployment hello -n hello -w
 ```
 
-Within a minute, you'll see this:
-
-```
+```text
 NAME    READY   UP-TO-DATE   AVAILABLE   AGE
-hello   3/3     3            3           102s
-hello   3/5     3            3           103s      # manual change takes effect
-hello   3/5     5            3           103s
-hello   4/5     5            4           104s
-hello   5/5     5            5           104s
-hello   5/3     5            5           2m19s     # Flux corrects it
-hello   3/3     3            3           2m19s
+hello   3/3     3            3           5m
+hello   5/5     5            5           5m        # manual change takes effect
+hello   3/3     3            3           6m        # Flux corrects it
 ```
 
-The manual scale took effect in about a second. Flux undid it 37 seconds later.
-
-The manual change landed — and then it was undone. The Kustomize Controller compared the cluster (5 replicas) against Git (3 replicas), found a mismatch, and reconciled. No alert, no human intervention. The loop handled it.
+The manual scale landed immediately. Within about a minute, it was undone.
 
 Press `Ctrl+C` to stop watching.
 
-### Experiment 2: The catastrophic delete
+This is the moment from Day 1's story, happening on your machine. You ran a command that worked — the cluster accepted it, the replicas went to five, and the application would have kept running. What the controller removed was not the ability to make that change. It removed the change's ability to persist. Git still says three, so three is what the cluster goes back to.
 
-**The scenario:** Someone accidentally deletes the entire namespace — app, service, everything:
+If five really is the right number, the fix isn't to scale again. It's a one-line commit — the same workflow you just used. From that point on, the controller defends five instead.
 
-```shell
-kubectl delete namespace hello
-```
+## Delete a pod and watch nothing happen
 
-Now watch Flux rebuild it:
+Every experiment so far has ended with the controller acting. This one ends with it staying silent — and the silence is the finding.
 
-```shell
-watch kubectl get all -n hello
-```
-
-Over the next minute you'll see the namespace reappear, the Deployment recreate, pods spin up, and the service come back online. Everything restored — from Git.
-
-Here's how that ran on a kind cluster with three replicas:
-
-```
- 1s   namespace Terminating   3 pods running
- 6s   namespace Terminating   0 pods running
-14s   namespace gone
-62s   namespace Active        3 pods running
-```
-
-The `kubectl delete` command itself blocked for 11 seconds before returning. Deleting a namespace isn't instant — Kubernetes has to remove everything inside it first, and the namespace sits in `Terminating` until that finishes. Then the namespace was simply absent for another 48 seconds, until Flux's next comparison found three declared resources and none of them present.
-
-Press `Ctrl+C` when you see everything running again.
-
-This is the moment that earns the phrase "self-healing." The namespace and everything in it are declared in Git. When they disappeared from the cluster, the controller treated it the same way it treated the replica mismatch — a difference to be reconciled. The fix isn't special logic. It's just the loop, doing what it always does.
-
-### Why the two cases take different times
-
-You configured two intervals when you set up Flux:
-
-- **Source interval (30s)** — how often the source controller checks Git for new commits.
-- **Reconciliation interval (1m)** — how often the kustomize controller compares the cluster against the stored artifact.
-
-It would be reasonable to assume every change waits for both. It doesn't, and the difference is worth understanding.
-
-**A change you push to Git** waits only for the source interval. Once the source controller stores a new artifact, the kustomize controller doesn't sit and wait for its own next slot — it's watching the source, and reconciles as soon as the artifact changes. Three pushes measured on a laptop landed in 5, 7 and 30 seconds: never longer than the 30-second poll.
-
-**Drift you cause with `kubectl`** produces no new artifact and no event, so nothing wakes the kustomize controller early. It waits for its next scheduled comparison. The two manual scales measured above took 37 and 42 seconds, both inside the 1-minute interval.
-
-You can see both patterns in the events log:
+First, open a second terminal and start watching Flux's logs:
 
 ```shell
-flux events --for Kustomization/hello-app
+flux logs --follow --tail 5
 ```
 
+Leave that running. Back in your original terminal, list the pods:
+
+```shell
+kubectl get pods -n hello
 ```
-3m10s  Normal  NewArtifact              GitRepository/gitops-loop-demo  stored artifact for commit 'Scale hello app to 3 replicas'
-3m9s   Normal  ReconciliationSucceeded  Kustomization/hello-app         Reconciliation finished in 331.397798ms, next run in 1m0s
+
+Pick any pod name from the output and delete it:
+
+```shell
+kubectl delete pod <pod-name> -n hello
 ```
 
-One second between the new artifact arriving and the Kustomization acting on it. That's not the interval — that's the controller reacting.
+Now watch the pods:
 
-Those two intervals are the heartbeat of your system. In production, you'd tune them based on how fast you need drift correction versus how much load you want on the API server. But for this lab, 30 seconds and 1 minute let you see everything happen in real time.
+```shell
+kubectl get pods -n hello -w
+```
 
-That's both halves of the GitOps promise, verified with your own hands. Git drives the cluster — and the cluster won't stay changed unless Git says so.
+Within a few seconds, the deleted pod terminates and a replacement appears:
+
+```text
+NAME                         READY   STATUS        RESTARTS   AGE
+hello-65d4c4d5c9-xz7vp      1/1     Terminating   0          10m
+hello-65d4c4d5c9-abc12       0/1     Pending       0          1s
+hello-65d4c4d5c9-abc12       1/1     Running       0          3s
+```
+
+Press `Ctrl+C`.
+
+Now look at your Flux logs terminal. Nothing. No reconciliation, no "applied revision," no activity at all. Flux didn't notice, because there was nothing for it to notice.
+
+The Deployment still says three replicas. Git still says three replicas. Those two agree, and that agreement is the only thing the controller checks. The missing pod was a problem, but it was a problem below the boundary Flux reads — down where Kubernetes watches `status`, sees two pods instead of three, and creates a replacement.
+
+This is the distinction Day 1 drew between the two loops: **Kubernetes heals workloads. GitOps heals definitions.** A dead pod is a workload problem. The definition never changed, so the controller that watches definitions had nothing to do.
+
+Press `Ctrl+C` in your Flux logs terminal too.
+
+That silence is worth remembering, because the next experiment sounds similar but ends very differently.
+
+## Delete the Deployment and watch both layers respond
+
+Last time, you deleted a pod and Flux did nothing. Now delete the thing Flux actually manages — the Deployment itself:
+
+```shell
+kubectl delete deployment hello -n hello
+```
+
+Watch the pods first:
+
+```shell
+kubectl get pods -n hello -w
+```
+
+The existing pods will terminate — they belonged to the Deployment you just removed, and Kubernetes has no reason to keep them. Then, within about a minute, new pods appear as the Deployment is recreated.
+
+Press `Ctrl+C`.
+
+Now check your Flux logs terminal:
+
+```shell
+flux logs --follow --tail 10
+```
+
+This time there is activity. You'll see the kustomize controller report that it applied resources — because Git declares a Deployment called `hello`, the cluster no longer has one, and that's a difference the controller can see.
+
+Confirm everything is back:
+
+```shell
+kubectl get pods,svc -n hello
+```
+
+The Deployment, the pods, and the service — all restored from Git.
+
+This is the two-loop recovery from Day 1. The Deployment is a definition, so its absence is a GitOps problem. Flux noticed and restored it. The pods are workloads, so their creation is a Kubernetes problem. Kubernetes noticed the new Deployment and created them. Each loop healed the part it owns, in order.
+
+Compare that to the pod delete. Same word — delete — but a completely different answer to the question you've been asking all day: **who should respond to this change?** When the pod died, Kubernetes responded and Flux stayed silent. When the Deployment died, Flux responded first and Kubernetes followed.
+
+The boundary isn't something you have to memorise. You've now watched it operate twice, from both sides.
 
 ## What's next — on to Day 3
 
 You came into today with a mental model. You're leaving with proof.
 
-The reconciliation loop isn't a theory anymore — it's running on your laptop. You've watched Git drive the cluster, and you've watched the cluster refuse to stay changed without Git's say-so. That's GitOps, working.
+The reconciliation loop isn't a theory anymore — it's running on your laptop. You've watched Git drive the cluster, and you've watched the cluster refuse to stay changed without Git's say-so. You've seen the controller stay silent when a pod died, because that wasn't its problem — and you've seen it act immediately when a Deployment disappeared, because that was. That's GitOps, working.
 
 Everything you built today was local — a kind cluster, a single app, one controller watching one repo. In Day 3, we take the same loop to **Azure Kubernetes Service**. The principles don't change. The scale does.
 
 Here's what you'll do:
 
-- **Provision an AKS cluster** and install Flux with production configuration.
-- **Set up GitHub Actions** so CI builds and validates, then hands off to GitOps for deployment.
-- **Deploy to the cloud** using the same Git-driven workflow you just proved locally.
+- **Provision an AKS cluster** — a real, cloud-hosted Kubernetes cluster with a public IP and a load balancer.
+- **Bootstrap Flux the production way** — one command instead of three.
+- **Deploy the same app to the internet** — this time accessible on a real URL.
+- **Break things again** — and watch Flux heal cloud infrastructure, not just local pods.
 
 Same loop. Bigger stage.
 
