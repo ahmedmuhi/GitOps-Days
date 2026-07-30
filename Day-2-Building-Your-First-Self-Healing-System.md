@@ -22,13 +22,13 @@ By the end of today you'll know which loop acts, why it acts, and — just as im
 
 ## Set up your workspace
 
-Before we touch Kubernetes or Flux, let's get the logistics out of the way in one pass: a repository you control, a local copy of it, and the files for today's application. After that, we build.
+Before we touch Kubernetes or Flux, let's get the logistics done in one pass — a repository you control, a copy of it on your machine, and today's application files. Then we build.
 
 ### Fork the repository
 
 Go to [`https://github.com/ahmedmuhi/GitOps-Days`](https://github.com/ahmedmuhi/GitOps-Days) and click **Fork**, then **Create fork**.
 
-Forking gives you a repository you can push to. That matters because you'll be changing the desired state all day — editing manifests, committing, pushing — and the controller only reconciles what it finds in Git. Nobody has write access to someone else's repository on GitHub, so a fork is how you get a copy of these files that you own and can change.
+Forking gives you a repository you can push to, and that matters more than it sounds. You'll be changing the desired state all day — editing manifests, committing, pushing — and the controller only reconciles what's actually in Git. You can't push to someone else's repository on GitHub, so forking is how you get a copy of these files that's yours to change.
 
 Your fork will live at:
 
@@ -59,7 +59,7 @@ origin  https://github.com/YOUR-USERNAME/GitOps-Days.git (push)
 ```
 
 > [!IMPORTANT]
-> If you see `ahmedmuhi` there instead, you've cloned this repository rather than your fork. Delete the folder and clone again using your own username — you won't be able to push otherwise, and pushing is how you'll drive the cluster today.
+> If you see `ahmedmuhi` there instead, you've cloned this repository rather than your fork. Delete the folder and clone again with your own username — you won't be able to push otherwise, and pushing is how you'll drive the cluster today.
 
 ### Create your working folder
 
@@ -81,7 +81,7 @@ my-work/day2/hello/
 
 ### What you're about to declare
 
-Before we hand these files to a controller, open `deployment.yaml` and read it.
+Before we hand these files to a controller, open `deployment.yaml` and have a read.
 
 ```yaml
 apiVersion: apps/v1
@@ -106,11 +106,11 @@ spec:
             - containerPort: 80
 ```
 
-One replica of a small NGINX image. The application doesn't matter today; that `replicas: 1` does. It's the value you'll change through Git, the value you'll change behind Git's back, and the value the controller will keep putting right.
+One replica of a small NGINX image. The app itself doesn't matter today — that `replicas: 1` does. It's the number you'll change through Git, the number you'll change behind Git's back, and the number the controller keeps putting right.
 
 ### Checkpoint: workspace ready
 
-Commit your work. A file that isn't in Git doesn't exist as far as the controller is concerned.
+Commit it. As far as the controller is concerned, a file that isn't in Git doesn't exist.
 
 ```shell
 git add my-work/
@@ -118,7 +118,7 @@ git commit -m "Create Day 2 workspace"
 git push
 ```
 
-You have a repository you control, a local clone, three manifests, and all of it pushed. Logistics are done — from here on, we build.
+You've got a repository you control, a clone on your machine, three manifests, and all of it pushed. That's the logistics done — from here on, we build.
 
 ## Create your cluster
 
