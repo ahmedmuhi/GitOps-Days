@@ -3,20 +3,22 @@
 > **What you'll need:** Docker (24.0+), kind (0.25.0+), `kubectl` (1.32+), Git (2.40+), and a GitHub account. Links are in the setup section below if you're missing any.
 >
 > **Time:** ~1 hour.
+>
+> **On Windows:** every command in this series is written for bash or zsh. Run them in [WSL](https://learn.microsoft.com/windows/wsl/install) and everything works exactly as printed.
 
-Yesterday you built a mental model of GitOps. You followed the reconciliation loop, watched it correct configuration drift, and learned where the GitOps controller stops and Kubernetes takes over.
+Yesterday you built a mental model. You followed the loop, watched it correct drift, and worked out where the GitOps controller stops and Kubernetes takes over.
 
-Today you'll build that same system on your own machine.
+Today you build it.
 
-By the end of this session you'll have a local Kubernetes cluster, a Git repository, and a GitOps controller continuously keeping them in sync. More importantly, you'll be able to change, break, and restore that system while watching each layer respond.
+By the end of this session you'll have a cluster running on your laptop, a Git repository you own, and a controller keeping the two in sync. And you'll have broken it a few times to see what happens.
 
-We'll start by creating the environment. Once it's running, we'll begin experimenting. Some changes will come from Git and others from `kubectl`. Some will be corrected by the GitOps controller, others handled entirely by Kubernetes.
+We'll get the environment up first. After that, everything is an experiment. Some changes will come from Git, some from `kubectl`. Some the GitOps controller will correct, and some it will ignore completely.
 
-As you work through each experiment, keep asking one question:
+One question runs through all of them:
 
 **Who should respond to this change?**
 
-By the end of today you'll know which reconciliation loop acts, why it acts, and—just as importantly—when it deliberately does nothing.
+By the end of today you'll know which loop acts, why it acts, and — just as importantly — when it does nothing on purpose.
 
 ## Set up your workspace
 
@@ -61,32 +63,21 @@ origin  https://github.com/YOUR-USERNAME/GitOps-Days.git (push)
 
 ### Create your working folder
 
-You'll be working in your own folder throughout this series. Keeping your work separate from the example files means you can pull future updates without overwriting anything you've built.
+You'll work in your own folder for the whole series. The examples stay untouched, so when you pull updates later they land cleanly and nothing you've built gets stepped on.
 
 ```shell
-mkdir -p student-work/YOUR-USERNAME/day2
-cp -r examples/day2/hello student-work/YOUR-USERNAME/day2/
+mkdir -p my-work/day2
+cp -r examples/day2/hello my-work/day2/
 ```
-
-> [!TIP]
-> On Windows PowerShell:
->
-> ```shell
-> New-Item -ItemType Directory -Path "student-work\YOUR-USERNAME\day2" -Force
-> Copy-Item -Recurse examples\day2\hello student-work\YOUR-USERNAME\day2\
-> ```
 
 You should now have:
 
 ```text
-student-work/YOUR-USERNAME/day2/hello/
+my-work/day2/hello/
 ├── namespace.yaml
 ├── deployment.yaml
 └── service.yaml
 ```
-
-> [!TIP]
-> If you repeat this lab later, don't copy over your existing work. Rename the old folder first, or create a new one such as `day2-v2`.
 
 ### What you're about to declare
 
@@ -122,7 +113,7 @@ One replica of a small NGINX image. The application doesn't matter today; that `
 Commit your work. A file that isn't in Git doesn't exist as far as the controller is concerned.
 
 ```shell
-git add student-work/
+git add my-work/
 git commit -m "Create Day 2 workspace"
 git push
 ```
@@ -371,7 +362,7 @@ Your fork holds the whole series — every day's lesson, the example manifests, 
 ```shell
 flux create kustomization hello-app \
   --source=GitRepository/gitops-loop-demo \
-  --path="./student-work/YOUR-USERNAME/day2/hello" \
+  --path="./my-work/day2/hello" \
   --prune=true \
   --interval=1m
 ```
@@ -481,7 +472,7 @@ From this point on, every command is an experiment.
 
 Flux deployed your app from existing files. Now let's prove that pushing a change to Git is all it takes to update your cluster.
 
-Open `student-work/YOUR-USERNAME/day2/hello/deployment.yaml` in your editor and change:
+Open `my-work/day2/hello/deployment.yaml` in your editor and change:
 
 ```yaml
 spec:
@@ -498,7 +489,7 @@ spec:
 Commit and push:
 
 ```shell
-git add student-work/YOUR-USERNAME/day2/hello/deployment.yaml
+git add my-work/day2/hello/deployment.yaml
 git commit -m "Scale hello app to 3 replicas"
 git push
 ```
