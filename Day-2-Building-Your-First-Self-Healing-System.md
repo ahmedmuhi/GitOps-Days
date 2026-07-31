@@ -122,55 +122,51 @@ You've got a repository you control, a clone on your machine, three manifests, a
 
 ## Create your cluster
 
-Now let's create the cluster the controller will eventually manage.
+Now for the cluster the controller will eventually manage.
 
-We'll use [kind](https://kind.sigs.k8s.io/) ("Kubernetes in Docker"), which runs a complete Kubernetes cluster inside Docker containers. It starts in about a minute, making it perfect for local development and experiments like today's.
+We'll use [kind](https://kind.sigs.k8s.io/) — Kubernetes in Docker — which runs a full Kubernetes cluster inside Docker containers. It comes up in about a minute, which is what makes it good for experiments like today's.
 
 ```shell
 kind create cluster --name gitops-loop-demo
 ```
 
 > [!IMPORTANT]
-> The first time you run this, kind downloads the image it runs the cluster from — roughly 435 MB, expanding to about 1.5 GB on disk. It appears as a single line in the output (`Ensuring node image (kindest/node:v1.36.1)`) with no progress bar. On a slow or metered connection, budget for it. It's downloaded once and reused by every cluster you create afterwards.
+> The first time you run this, kind downloads the image it runs the cluster from — roughly 435 MB, expanding to about 1.5 GB on disk. It shows up as a single line in the output (`Ensuring node image (kindest/node:v1.36.1)`) with no progress bar, so on a slow or metered connection, budget for it. It's downloaded once and reused by every cluster you create afterwards.
 
-The whole command took 65 seconds on a laptop, including that download.
+On my laptop the whole thing took 65 seconds, download included.
 
 ### Checkpoint: cluster running
 
-Verify that Kubernetes is up:
+Check that Kubernetes is up:
 
 ```shell
 kubectl get nodes
 ```
 
-You should see something similar to:
+You should see something like:
 
 ```text
 NAME                             STATUS   ROLES           AGE   VERSION
 gitops-loop-demo-control-plane   Ready    control-plane   39s   v1.36.1
 ```
 
-The important part is `STATUS: Ready`. If you see `NotReady`, wait a few seconds and try again. Kubernetes is still finishing its startup.
+The part that matters is `STATUS: Ready`. If it says `NotReady`, give it a few seconds and try again — Kubernetes is still starting up.
 
 > [!IMPORTANT]
-> If the node stays `NotReady`, first make sure Docker is running:
+> If the node stays `NotReady`, first check Docker is running:
 >
 > ```shell
 > docker ps
 > ```
 >
-> Also check that Docker has at least 4 GB of memory available. If everything looks healthy but the cluster still won't start, recreate it:
+> Also check Docker has at least 4 GB of memory available. If everything looks healthy and the cluster still won't start, recreate it:
 >
 > ```shell
 > kind delete cluster --name gitops-loop-demo
 > kind create cluster --name gitops-loop-demo
 > ```
 
-You now have a working Kubernetes cluster.
-
-It isn't running any applications yet. It isn't connected to Git. It doesn't even know a GitOps controller exists.
-
-Right now it's simply a Kubernetes cluster.
+You've got a working Kubernetes cluster. It isn't running anything, it isn't connected to Git, and it has no idea a GitOps controller exists — right now it's just a Kubernetes cluster.
 
 Let's change that.
 
@@ -178,9 +174,9 @@ Let's change that.
 
 Your cluster is running, but nothing in it is watching Git. There's no controller, no repository to compare against, and no way to correct a difference even if one existed.
 
-Flux is one of the two GitOps controllers you met yesterday. The other is [Argo CD](https://argo-cd.readthedocs.io/). Both implement the same reconciliation loop, and either would behave the same way throughout today's experiments. We're using Flux because it installs quickly and then stays out of the way, keeping the focus on the loop rather than on the tool.
+Flux is one of the two controllers you met yesterday. The other is [Argo CD](https://argo-cd.readthedocs.io/), and either would behave the same way through today's experiments. We're using Flux because it installs quickly and then gets out of the way, which keeps the focus on the loop rather than the tool.
 
-Installing Flux happens in two places. First the CLI on your machine, then the controllers inside your cluster.
+Installing it happens in two places — the CLI on your machine, then the controllers inside your cluster.
 
 ### Install the Flux CLI
 
@@ -191,27 +187,27 @@ curl -s https://fluxcd.io/install.sh | sudo bash
 > [!TIP]
 > For Homebrew, Chocolatey, and other installation methods, see the [Flux installation documentation](https://fluxcd.io/flux/installation/).
 
-Confirm that the CLI is available:
+Confirm the CLI is available:
 
 ```shell
 flux --version
 ```
 
-This is a tool on your laptop, not part of the reconciliation loop. You'll use it to create and inspect Flux resources, but once those resources exist, everything else happens inside Kubernetes.
+This is a tool on your laptop, not part of the loop. You'll use it to create and inspect Flux resources, but once those resources exist, everything else happens inside Kubernetes.
 
 ### Install Flux into the cluster
 
-Now install the part that actually runs in Kubernetes:
+Now the part that actually runs in Kubernetes:
 
 ```shell
 flux install
 ```
 
-This creates a `flux-system` namespace and deploys Flux's controllers into it. From this point on, everything Flux does happens inside your cluster.
+This creates a `flux-system` namespace and deploys Flux's controllers into it. From here on, everything Flux does happens inside your cluster.
 
 Expect about thirty lines of output as it creates custom resource definitions, service accounts, permissions and four Deployments, ending with `✔ install finished`. It took just over a minute.
 
-Confirm that the controllers are running:
+Confirm the controllers are running:
 
 ```shell
 kubectl get pods -n flux-system
@@ -227,13 +223,11 @@ notification-controller-5f5d67f758-jvrn4   1/1     Running   0          63s
 source-controller-666b89b45c-c77zf         1/1     Running   0          63s
 ```
 
-The random suffixes in those names will differ on your machine.
+The random suffixes will differ on your machine.
 
-Yesterday, "the controller" was a single thing. Here it appears as four pods, and two of them do today's work.
+Yesterday, "the controller" was a single thing. Here it arrives as four pods, and two of them do today's work. The **source controller** fetches from Git, and the **kustomize controller** applies manifests to the cluster — fetching and applying are separate jobs. Argo CD splits them the same way, under different names.
 
-The **source controller** fetches from Git. The **kustomize controller** applies manifests to the cluster. Fetching and applying are separate jobs. Argo CD follows the same pattern, although it gives the components different names.
-
-The other two won't feature in today's lab. The **helm controller** manages Helm releases, and the **notification controller** sends events to systems such as Slack.
+The other two sit out today's lab. The **helm controller** manages Helm releases, and the **notification controller** sends events to systems like Slack.
 
 ### Checkpoint: installed and idle
 
@@ -273,9 +267,7 @@ flux check
 
 `bootstrapped: false` is expected — you installed Flux directly rather than through `flux bootstrap`, which is the production path we'll come to later in the series.
 
-Every controller is healthy.
-
-Now ask each of the two controllers what it's working on.
+Every controller is healthy. Now ask each of the two what it's working on.
 
 ```shell
 flux get sources git
@@ -293,11 +285,11 @@ flux get kustomizations
 ✗ no Kustomization objects found in "flux-system" namespace
 ```
 
-Nothing. Both times. (Both commands also exit with an error code, which is just how `flux get` reports an empty list.)
+Nothing, both times. (Both commands also exit with an error code, which is just how `flux get` reports an empty list.)
 
-The source controller has no repository to fetch, and the kustomize controller has no manifests to apply. Flux is installed, healthy, and doing nothing at all — because a controller with no Git has no desired state, and without a desired state there is nothing to compare the cluster against.
+The source controller has no repository to fetch and the kustomize controller has no manifests to apply. Flux is installed, healthy, and doing absolutely nothing — because a controller with no Git has no desired state, and without a desired state there's nothing to compare the cluster against.
 
-Those two empty results tell you exactly what Flux is waiting for.
+Those two empty results tell you exactly what Flux is waiting for:
 
 * Which repository should it watch?
 * Which folder in that repository describes this cluster?
@@ -306,9 +298,7 @@ Let's answer both.
 
 ## Point Flux at your repository
 
-Two questions, two objects.
-
-The first tells the source controller **which repository** to fetch. The second tells the kustomize controller **which part of that repository** describes this cluster.
+Two questions, two objects. The first tells the source controller **which repository** to fetch, and the second tells the kustomize controller **which part of it** describes this cluster.
 
 ### Create the Git source
 
@@ -328,11 +318,9 @@ flux create source git gitops-loop-demo \
 ✔ fetched revision: main@sha1:3f22e3ba4e8deaae815fa76d3ddf6cb94cb74d7b
 ```
 
-This makes the **watch** phase from yesterday concrete.
+That's the **watch** phase from yesterday, made concrete. The source controller now fetches the `main` branch of your fork, stores an artifact of its contents inside the cluster, and refreshes that artifact every thirty seconds.
 
-The source controller now fetches the `main` branch of your fork, stores an artifact containing its latest contents inside the cluster, and refreshes that artifact every thirty seconds.
-
-Thirty seconds is shorter than Flux's default one-minute interval. We're shortening it so the experiments move quickly instead of leaving you waiting around.
+Thirty seconds is shorter than Flux's default minute. We're shortening it so the experiments move quickly instead of leaving you waiting around.
 
 Confirm it worked:
 
@@ -345,19 +333,11 @@ NAME               REVISION             SUSPENDED   READY   MESSAGE
 gitops-loop-demo   main@sha1:3f22e3ba   False       True    stored artifact for revision 'main@sha1:3f22e3ba'
 ```
 
-`READY: True` means the source controller reached GitHub, fetched your repository, and stored an artifact from it.
-
-Your repository is now inside the cluster.
-
-Nothing else has happened.
-
-Flux now knows **where** to read from. It still doesn't know **what** in that repository should become this cluster.
+`READY: True` means the source controller reached GitHub, fetched your repository, and stored an artifact from it. Your repository is now inside the cluster — and nothing else has happened. Flux knows **where** to read from, but not **what** in there should become this cluster.
 
 ### Create the Kustomization
 
-That's what a Kustomization answers.
-
-Your fork holds the whole series — every day's lesson, the example manifests, the images. The Kustomization tells Flux which folder in it describes this cluster.
+That's what a Kustomization answers. Your fork holds the whole series — every day's lesson, the example manifests, the images — so the Kustomization tells Flux which folder in it describes this cluster.
 
 ```shell
 flux create kustomization hello-app \
@@ -376,22 +356,14 @@ flux create kustomization hello-app \
 ✔ applied revision main@sha1:3f22e3ba4e8deaae815fa76d3ddf6cb94cb74d7b
 ```
 
-Creating the Kustomization completes the loop.
-
-The flags mean:
+That completes the loop. The flags mean:
 
 * `--source` selects the Git source you just created.
 * `--path` identifies the folder containing the desired state.
 * `--prune=true` removes managed resources from the cluster when their declarations disappear from Git.
 * `--interval=1m` compares the declared state with the cluster every minute and reconciles any difference.
 
-Notice how the loop is assembled.
-
-The source controller fetches your repository every thirty seconds.
-
-The kustomize controller compares that copy with the cluster every minute.
-
-Yesterday, watch, compare, and reconcile looked like one continuous cycle. In Flux it's separate components, each on its own clock.
+Notice how the loop is assembled. The source controller fetches your repository every thirty seconds, and the kustomize controller compares that copy with the cluster every minute. Yesterday, watch, compare and reconcile looked like one continuous cycle — in Flux it's separate components, each on its own clock.
 
 ### Checkpoint: the loop is running
 
@@ -404,27 +376,13 @@ NAME        REVISION             SUSPENDED   READY   MESSAGE
 hello-app   main@sha1:3f22e3ba   False       True    Applied revision: main@sha1:3f22e3ba
 ```
 
-Look at the message: **Applied revision**.
+Look at the message. Not waiting, not pending — **applied**. Flux has already read the manifests at that path and put them on the cluster.
 
-Not waiting, not pending. Applied. Flux has already read the manifests at that path and put them on the cluster.
+You didn't push a commit and you didn't run `kubectl apply`. You created an object describing what the cluster should contain, and the loop did the rest on its first pass.
 
-You didn't push a commit.
+Here's what happened. The source controller already had your repository stored, because it fetched it when you created the Git source. So when the Kustomization appeared, the kustomize controller read the three manifests in that folder and compared them with the cluster — where the namespace, the Deployment and the Service were all missing. Every declared resource was a difference, so Flux applied all three.
 
-You didn't run `kubectl apply`.
-
-You created an object describing what the cluster should contain, and the reconciliation loop did the rest on its first pass.
-
-Here's what happened.
-
-The source controller already had your repository stored because it fetched it when you created the Git source.
-
-When the Kustomization appeared, the kustomize controller read the three manifests in that folder and compared them with the cluster.
-
-The namespace didn't exist. The Deployment didn't exist. The Service didn't exist.
-
-Every declared resource was missing, so Flux applied all three.
-
-That's the same comparison you followed yesterday, just with the numbers at their most extreme: desired is three resources, actual is none.
+That's the same comparison you followed yesterday, with the numbers at their most extreme: desired is three resources, actual is none.
 
 Have a look at what you've got:
 
@@ -440,9 +398,7 @@ NAME            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE
 service/hello   ClusterIP   10.96.21.198   <none>        80/TCP    19s
 ```
 
-One pod and one service, exactly as your manifests declared.
-
-You have not run `kubectl apply` once.
+One pod and one service, exactly as your manifests declared — and you haven't run `kubectl apply` once.
 
 Finally, prove it's real:
 
@@ -464,9 +420,7 @@ The server name is the pod name. Your application, running in Kubernetes, deploy
 
 Press `Ctrl+C` when you're finished.
 
-The system is running.
-
-From this point on, every command is an experiment.
+The system is running. From here on, every command is an experiment.
 
 ## Make a change through Git
 
